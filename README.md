@@ -14,11 +14,11 @@ The platform aims to simplify the process of discovering, buying, selling, and c
 
 **Product:** Artisto **Team:** Artisto **Team leader:** Osvaldas Valuckas
 
-* **Osvaldas Valuckas** - Team Leader
-* **Adomas Pimpė** - TBD
-* **Adomas Riepšas** - TBD
-* **Matas Malunavičius** - TBD
-* **Matas Liudvinavičius** - TBD
+* **Osvaldas Valuckas** (KSPSK) - Team Leader, Fullstack
+* **Adomas Pimpė** (Adamm0212) - Backend
+* **Adomas Riepšas** (AdomasHax0R) - Frontend
+* **Matas Malunavičius** (Malunkeee) - Backend
+* **Matas Liudvinavičius** (matasliu) - Backend
 
 ## End-to-end scenario
 
