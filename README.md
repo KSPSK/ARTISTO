@@ -10,47 +10,25 @@ Our goal is to make it easy for **buyers to discover and purchase artwork that m
 
 The platform aims to simplify the process of discovering, buying, selling, and commissioning creative work while building a community around art and creativity.
 
-## Team Members and Roles
+## Team
+
+**Product:** Artisto **Team:** Artisto **Team leader:** Osvaldas Valuckas
 
 * **Osvaldas Valuckas** - Team Leader
 * **Adomas Pimpė** - TBD
 * **Adomas Riepšas** - TBD
 * **Matas Malunavičius** - TBD
 * **Matas Liudvinavičius** - TBD
-  
+
+## End-to-end scenario
+
+Geronimo is an artist struggling to promote and sell his work online. He creates an Artisto account, sets up his creator profile, and uploads photos of one of his artworks. He adds a title, description, category, price, and local-pickup option, then publishes the listing.
+
+A buyer discovers Geronimo’s artwork through Artisto’s marketplace, opens the product page, and sends Geronimo a message with a question. After Geronimo replies, the buyer chooses **Buy Now** and places a local-pickup order. They meet, confirm that the artwork has been handed over and received, and the order is marked as completed. The buyer can then leave Geronimo a review, helping other buyers trust his profile.
+
 ## MVP Roadmap
 
-### 1. Alpha — Core MVP
-
-- Basic creator profiles
-- Create and manage product listings
-- Marketplace / Discover + basic search
-- Product pages
-- Buy Now
-
-### 2. Beta — Expanded MVP
-
-Everything from Alpha, plus:
-
-- Registration & login
-- Likes, Favorites & Follow
-- Search filters and categories
-- Make an Offer
-- Reviews & ratings
-- Notifications
-- Basic reputation statistics
-- Buyer/Seller chat
-
-### 3. Final Product
-
-Everything from Beta, plus:
-
-- Creator ranks: **New → Rising → Trusted**
-- Verified transactions
-- Improved ordering
-- Reporting / dispute system
-- Improved admin tools
-- Polished responsive UI/UX
+The planned Alpha, Beta, and Final releases are described in [ROADMAP.md](ROADMAP.md).
 
 ## Tech Stack
 
