@@ -2,7 +2,6 @@
 
 ## Alpha — Core MVP
 
-- [ ] Registration and login
 - [ ] User accounts with buyer and creator capabilities
 - [ ] Basic creator profiles
 - [ ] Create, edit, and manage product listings
@@ -20,6 +19,7 @@
 
 Everything from Alpha, plus:
 
+- [ ] Registration and login
 - [ ] Search filters and categories
 - [ ] Likes, favorites, and following creators
 - [ ] Buyer/seller chat
