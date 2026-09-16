@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="artisto.client/artisto.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="ARTISTO.Server/ARTISTO.Server.csproj" />
+</Solution>
