@@ -1,6 +1,0 @@
-@ARTISTO.Server_HostAddress = http://localhost:5074
-
-GET {{ARTISTO.Server_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
