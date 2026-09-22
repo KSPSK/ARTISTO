@@ -1,0 +1,48 @@
+@HostAddress = https://localhost:7143
+
+### Get all artwork listings
+
+GET {{HostAddress}}/api/artworklistings
+Accept: application/json
+
+### Get a single artwork listing by id
+
+GET {{HostAddress}}/api/artworklistings/1
+Accept: application/json
+
+### Get an artwork listing that does not exist (expect 404 Not Found)
+
+GET {{HostAddress}}/api/artworklistings/999
+Accept: application/json
+
+### Create a new artwork listing
+
+POST {{HostAddress}}/api/artworklistings
+Content-Type: application/json
+
+{
+  "title": "Blue Horizon",
+  "description": "A small original seascape painting.",
+  "price": 150.00,
+  "creatorName": "Geronimo",
+  "category": "Painting",
+  "localPickupAvailable": true
+}
+
+### Update an artwork listing
+
+PUT {{HostAddress}}/api/artworklistings/1
+Content-Type: application/json
+
+{
+  "title": "Evening in Vilnius",
+  "description": "An updated original cityscape painting.",
+  "price": 140.00,
+  "creatorName": "Geronimo",
+  "category": "Painting",
+  "localPickupAvailable": true
+}
+
+### Delete an artwork listing
+
+DELETE {{HostAddress}}/api/artworklistings/2
