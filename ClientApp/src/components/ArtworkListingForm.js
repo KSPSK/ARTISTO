@@ -204,8 +204,8 @@ export default function ArtworkListingForm() {
                     Listing deleted successfully
                 </div>
 
-                <a href="/" className="btn btn-primary">
-                    Return to the main page
+                <a href="/artworklistings" className="btn btn-primary">
+                    Return to listings
                 </a>
             </div>
         );

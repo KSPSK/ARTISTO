@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom';
 
 export class ArtworkListings extends Component {
   static displayName = ArtworkListings.name;
@@ -45,13 +46,20 @@ export class ArtworkListings extends Component {
       return (
         <div className="artwork-status artwork-status-error">
           <p>Failed to load listings. {errorMessage}.</p>
-          <button onClick={this.loadListings}>Retry</button>
+          <button className="btn btn-secondary" type="button" onClick={this.loadListings}>
+            Try again
+          </button>
         </div>
       );
     }
 
     if (listings.length === 0) {
-      return <p className="artwork-status">No listings yet.</p>;
+      return (
+        <p className="artwork-status">
+          No listings yet. <Link to="/listings/new">Sell your art</Link> to add
+          the first one.
+        </p>
+      );
     }
 
     return (
@@ -61,7 +69,12 @@ export class ArtworkListings extends Component {
             <h3 className="artwork-title">{listing.title}</h3>
             <p className="artwork-creator">{listing.creatorName}</p>
             <p className="artwork-price">{listing.price} €</p>
-            <p className="artwork-category">{listing.category}</p>
+            <p className="artwork-category">
+              {listing.category === 'DigitalArt' ? 'Digital art' : listing.category}
+            </p>
+            <Link className="btn btn-primary artwork-open" to={`/listings/${listing.id}/edit`}>
+              Open listing
+            </Link>
           </div>
         ))}
       </div>
