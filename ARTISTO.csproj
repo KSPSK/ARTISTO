@@ -49,4 +49,7 @@
       </ResolvedFileToPublish>
     </ItemGroup>
   </Target>
+	<PropertyGroup>
+		<DefaultItemExcludes>$(DefaultItemExcludes);ARTISTO.Server\**;artisto.client\**</DefaultItemExcludes>
+	</PropertyGroup>
 </Project>
