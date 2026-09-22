@@ -55,6 +55,12 @@ code {
   margin: 0;
 }
 
+.artwork-open {
+  display: block;
+  width: fit-content;
+  margin-top: 0.75rem;
+}
+
 .artwork-status {
   margin-top: 1rem;
 }
