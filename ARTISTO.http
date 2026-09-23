@@ -46,3 +46,17 @@ Content-Type: application/json
 ### Delete an artwork listing
 
 DELETE {{HostAddress}}/api/artworklistings/2
+
+### Create a listing with invalid data (expect 400 Bad Request)
+
+POST {{HostAddress}}/api/artworklistings
+Content-Type: application/json
+
+{
+  "title": "",
+  "description": "Missing a title, creator name, and a valid price.",
+  "price": 0,
+  "creatorName": "",
+  "category": "Painting",
+  "localPickupAvailable": false
+}

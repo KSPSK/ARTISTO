@@ -172,6 +172,15 @@ export default function ArtworkListingForm() {
             });
 
             if (!response.ok) {
+                if (response.status === 400) {
+                    const problem = await response.json().catch(() => null);
+                    const messages = problem?.errors
+                        ? Object.values(problem.errors).flat().join(" ")
+                        : "Please check the listing details and try again.";
+                    setError(messages);
+                    return;
+                }
+
                 setError(
                     response.status === 404
                         ? "Listing not found. It may have been deleted."
