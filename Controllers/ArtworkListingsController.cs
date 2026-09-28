@@ -47,8 +47,8 @@ public class ArtworkListingsController : ControllerBase
             if (!string.IsNullOrEmpty(query))
             {
                 results = results.Where(item =>
-                    item.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    item.CreatorName.Contains(query, StringComparison.OrdinalIgnoreCase));
+                (item.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.CreatorName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
             }   
 
         return Ok(results.Select(CopyListing).ToList());
