@@ -36,11 +36,22 @@ public class ArtworkListingsController : ControllerBase
     private static int _nextId = 3;
 
     [HttpGet]
-    public ActionResult<IEnumerable<ArtworkListing>> GetAll()
+    public ActionResult<IEnumerable<ArtworkListing>> GetAll([FromQuery] string? q)
     {
+        var query = q?.Trim();
+
         lock (SyncRoot)
         {
-            return Ok(Listings.Select(CopyListing).ToList());
+             IEnumerable<ArtworkListing> results = Listings;
+
+            if (!string.IsNullOrEmpty(query))
+            {
+                results = results.Where(item =>
+                (item.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (item.CreatorName?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false));
+            }   
+
+        return Ok(results.Select(CopyListing).ToList());
         }
     }
 
