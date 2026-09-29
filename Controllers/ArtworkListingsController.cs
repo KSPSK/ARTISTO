@@ -56,6 +56,8 @@ public class ArtworkListingsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType<ArtworkListing>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public ActionResult<ArtworkListing> GetById(int id)
     {
         lock (SyncRoot)
@@ -138,8 +140,8 @@ public class ArtworkListingsController : ControllerBase
         };
     }
 
-    private static object CreateNotFoundResponse(int id)
+    private static ApiErrorResponse CreateNotFoundResponse(int id)
     {
-        return new { message = $"Artwork listing {id} was not found." };
+        return new ApiErrorResponse($"Artwork listing {id} was not found.");
     }
 }
