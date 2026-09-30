@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
 const categoryLabels = {
     Painting: "Painting",
@@ -12,6 +12,11 @@ const categoryLabels = {
 
 export default function ArtworkListingDetails() {
     const { id } = useParams();
+    const location = useLocation();
+    const message = location.state?.message;
+    const listingsPath = location.state?.fromSearch
+        ? `/artworklistings?q=${encodeURIComponent(location.state.fromSearch)}`
+        : "/artworklistings";
 
     const [listing, setListing] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -77,7 +82,7 @@ export default function ArtworkListingDetails() {
                 <h1>Listing not found</h1>
                 <p>This listing does not exist or has been removed.</p>
 
-                <Link to="/artworklistings" className="btn btn-secondary">
+                <Link to={listingsPath} className="btn btn-secondary">
                     Back to listings
                 </Link>
             </div>
@@ -99,7 +104,7 @@ export default function ArtworkListingDetails() {
                         Try again
                     </button>
 
-                    <Link to="/artworklistings" className="btn btn-secondary">
+                    <Link to={listingsPath} className="btn btn-secondary">
                         Back to listings
                     </Link>
                 </div>
@@ -118,7 +123,13 @@ export default function ArtworkListingDetails() {
 
     return (
         <main className="listing-details">
-            <Link to="/artworklistings" className="listing-details-back">
+            {message && (
+                <div className="alert alert-success" role="status">
+                    {message}
+                </div>
+            )}
+
+            <Link to={listingsPath} className="listing-details-back">
                 ← Back to listings
             </Link>
 
@@ -166,6 +177,11 @@ export default function ArtworkListingDetails() {
                         <Link
                             to={`/listings/${listing.id}/edit`}
                             className="btn btn-primary"
+                            state={
+                                location.state?.fromSearch
+                                    ? { fromSearch: location.state.fromSearch }
+                                    : undefined
+                            }
                         >
                             Edit listing
                         </Link>
