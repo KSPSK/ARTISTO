@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 const initialForm = {
     title: "",
@@ -21,7 +21,10 @@ const categories = [
 
 export default function ArtworkListingForm() {
     const { id } = useParams();
+    const navigate = useNavigate();
+    const location = useLocation();
     const isEditing = Boolean(id);
+    const fromSearch = location.state?.fromSearch;
 
     const [form, setForm] = useState({ ...initialForm });
     const [success, setSuccess] = useState("");
@@ -138,6 +141,12 @@ export default function ArtworkListingForm() {
             }
 
             setIsDeleted(true);
+            navigate(
+                fromSearch
+                    ? `/artworklistings?q=${encodeURIComponent(fromSearch)}`
+                    : "/artworklistings",
+                { state: { message: "Listing deleted." } }
+            );
         } catch {
             setError("Failed to connect to the server. Please try again.");
         } finally {
@@ -189,16 +198,16 @@ export default function ArtworkListingForm() {
                 return;
             }
 
-            setSuccess(
-                isEditing
-                    ? "Changes saved successfully."
-                    : "Listing created successfully."
-            );
+            const saved = await response.json();
 
-            // When editing, keep the saved values in the form
-            if (!isEditing) {
-                setForm({ ...initialForm });
-            }
+            navigate(`/listings/${saved.id}`, {
+                state: {
+                    message: isEditing
+                        ? "Listing updated."
+                        : "Listing created.",
+                    fromSearch,
+                },
+            });
         } catch {
             setError("Failed to connect to the server. Please try again.");
         } finally {
