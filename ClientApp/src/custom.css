@@ -68,3 +68,101 @@ code {
 .artwork-status-error button {
   margin-top: 0.5rem;
 }
+
+.listing-details {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px 0 48px;
+}
+
+.listing-details-back {
+    display: inline-block;
+    margin-bottom: 24px;
+}
+
+.listing-details-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+    align-items: start;
+}
+
+.listing-details-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 360px;
+    padding: 24px;
+    border: 1px solid #d9dee5;
+    border-radius: 12px;
+    background-color: #f3f4f6;
+    color: #626b77;
+    text-align: center;
+}
+
+.listing-details-content {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+    .listing-details-content h1 {
+        margin-bottom: 16px;
+    }
+
+.listing-details-price {
+    margin-bottom: 24px;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.listing-details-info {
+    margin-bottom: 28px;
+}
+
+    .listing-details-info > div {
+        display: grid;
+        grid-template-columns: 120px minmax(0, 1fr);
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .listing-details-info dt {
+        font-weight: 600;
+    }
+
+    .listing-details-info dd {
+        margin: 0;
+    }
+
+.listing-details-content h2 {
+    margin-bottom: 12px;
+    font-size: 1.25rem;
+}
+
+.listing-details-description {
+    white-space: pre-wrap;
+    line-height: 1.7;
+}
+
+.listing-details-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.listing-details-status {
+    padding: 48px 0;
+}
+
+@media (max-width: 767px) {
+    .listing-details-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .listing-details-image {
+        min-height: 260px;
+    }
+}

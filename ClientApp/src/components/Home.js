@@ -112,7 +112,7 @@ export function Home() {
                 </p>
                 <Link
                   className="btn btn-primary artwork-open"
-                  to={`/listings/${listing.id}/edit`}
+                  to={`/listings/${listing.id}`}
                 >
                   Open listing
                 </Link>
