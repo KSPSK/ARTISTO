@@ -72,7 +72,7 @@ export class ArtworkListings extends Component {
             <p className="artwork-category">
               {listing.category === 'DigitalArt' ? 'Digital art' : listing.category}
             </p>
-            <Link className="btn btn-primary artwork-open" to={`/listings/${listing.id}/edit`}>
+            <Link className="btn btn-primary artwork-open" to={`/listings/${listing.id}`}>
               Open listing
             </Link>
           </div>
