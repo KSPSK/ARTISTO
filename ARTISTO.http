@@ -60,3 +60,77 @@ Content-Type: application/json
   "category": "Painting",
   "localPickupAvailable": false
 }
+
+### Create a creator profile
+POST {{HostAddress}}/api/creatorprofiles
+Content-Type: application/json
+
+{
+  "displayName": "Geronimo",
+  "description": "Oil painter from Vilnius.",
+  "city": "Vilnius"
+}
+
+### Get all creator profiles
+GET {{HostAddress}}/api/creatorprofiles
+Accept: application/json
+
+### Get a creator profile
+GET {{HostAddress}}/api/creatorprofiles/1
+Accept: application/json
+
+### Update a creator profile
+PUT {{HostAddress}}/api/creatorprofiles/1
+Content-Type: application/json
+
+{
+  "displayName": "Geronimo Art",
+  "description": "Oil painter and sketch artist.",
+  "city": "Kaunas"
+}
+
+### Link a listing to a profile
+PUT {{HostAddress}}/api/artworklistings/1
+Content-Type: application/json
+
+{
+  "title": "Blue Horizon",
+  "description": "A small original seascape painting.",
+  "price": 150.00,
+  "creatorName": "Geronimo",
+  "category": "Painting",
+  "localPickupAvailable": true,
+  "creatorProfileId": 1
+}
+
+### Get artwork listings of a creator
+GET {{HostAddress}}/api/creatorprofiles/1/artworklistings
+Accept: application/json
+
+### Get a profile that does not exist (expect 404)
+GET {{HostAddress}}/api/creatorprofiles/999
+Accept: application/json
+
+### Link a listing to a profile that does not exist (expect 400)
+PUT {{HostAddress}}/api/artworklistings/1
+Content-Type: application/json
+
+{
+  "title": "Blue Horizon",
+  "description": "A small original seascape painting.",
+  "price": 150.00,
+  "creatorName": "Geronimo",
+  "category": "Painting",
+  "localPickupAvailable": true,
+  "creatorProfileId": 999
+}
+
+### Create a profile with invalid data (expect 400)
+POST {{HostAddress}}/api/creatorprofiles
+Content-Type: application/json
+
+{
+  "displayName": "",
+  "description": "Missing display name and city.",
+  "city": ""
+}
