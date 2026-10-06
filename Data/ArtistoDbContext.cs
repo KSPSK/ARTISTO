@@ -11,14 +11,18 @@ public class ArtistoDbContext : DbContext
     }
 
     public DbSet<ArtworkListing> ArtworkListings => Set<ArtworkListing>();
-    public DbSet<CreatorProfile> CreatorProfiles => Set<CreatorProfile>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<CreatorProfile>()
-            .HasMany(p => p.ArtworkListings)
-            .WithOne(a => a.CreatorProfile)
-            .HasForeignKey(a => a.CreatorProfileId)
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Username)
+            .IsUnique();
+
+        modelBuilder.Entity<User>()
+            .HasMany(u => u.ArtworkListings)
+            .WithOne(a => a.User)
+            .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.SetNull);
     }
 }
