@@ -1,4 +1,5 @@
 using ARTISTO.Data;
+using ARTISTO.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,7 @@ builder.Services.AddDbContext<ArtistoDbContext>(options =>
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<IArtworkImageService, ArtworkImageService>();
 
 var app = builder.Build();
 
