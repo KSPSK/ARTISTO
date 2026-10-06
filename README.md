@@ -17,7 +17,7 @@ The platform aims to simplify the process of discovering, buying, selling, and c
 * **Osvaldas Valuckas** (KSPSK) - Team Leader, Fullstack
 * **Adomas Pimpė** (Adamm0212) - Backend
 * **Adomas Riepšas** (AdomasHax0R) - Frontend
-* **Matas Malunavičius** (Malunkeee) - Backend
+* **Matas Malunavičius** (Malunkeee) - Fullstack
 * **Matas Liudvinavičius** (matasliu) - Backend
 
 ## End-to-end scenario
