@@ -33,4 +33,9 @@ public class ArtworkListing
     public ArtworkCategory Category { get; set; }
 
     public bool LocalPickupAvailable { get; set; }
+
+    public int? CreatorProfileId { get; set; }
+
+    [JsonIgnore]
+    public CreatorProfile? CreatorProfile { get; set; }
 }

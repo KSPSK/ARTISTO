@@ -47,6 +47,13 @@ public class ArtworkListingsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ArtworkListing>> Create(ArtworkListing listing)
     {
+        if (listing.CreatorProfileId is not null &&
+            !await _context.CreatorProfiles.AnyAsync(p => p.Id == listing.CreatorProfileId))
+        {
+            return BadRequest(new ApiErrorResponse(
+                $"Creator profile {listing.CreatorProfileId} was not found."));
+        }
+
         _context.ArtworkListings.Add(listing);
         await _context.SaveChangesAsync();
         return CreatedAtAction(
@@ -63,6 +70,13 @@ public class ArtworkListingsController : ControllerBase
         {
             return NotFound(CreateNotFoundResponse(id));
         }
+
+        if (listing.CreatorProfileId is not null &&
+            !await _context.CreatorProfiles.AnyAsync(p => p.Id == listing.CreatorProfileId))
+        {
+            return BadRequest(new ApiErrorResponse(
+                $"Creator profile {listing.CreatorProfileId} was not found."));
+        }
         // Could use .SetValues instead of updating fields seperately
         existing.Title = listing.Title;
         existing.Description = listing.Description;
@@ -70,6 +84,8 @@ public class ArtworkListingsController : ControllerBase
         existing.CreatorName = listing.CreatorName;
         existing.Category = listing.Category;
         existing.LocalPickupAvailable = listing.LocalPickupAvailable;
+        existing.CreatorProfileId = listing.CreatorProfileId;
+        
         await _context.SaveChangesAsync();
         return Ok(existing);
     }
