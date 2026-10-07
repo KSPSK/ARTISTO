@@ -22,6 +22,13 @@ export class NavMenu extends Component {
   }
 
   render() {
+    let user = null;
+    try {
+      user = JSON.parse(sessionStorage.getItem('user') || 'null');
+    } catch {
+      user = null;
+    }
+
     return (
       <header>
         <Navbar className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow mb-3" container light>
@@ -38,9 +45,35 @@ export class NavMenu extends Component {
               <NavItem>
                 <NavLink tag={Link} className="text-dark" to="/listings/new">Sell your art</NavLink>
               </NavItem>
-              <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/login">Log in</NavLink>
-              </NavItem>
+              {user ? (
+                <>
+                  <NavItem>
+                    <NavLink tag={Link} className="text-dark" to={`/users/${user.id}`}>My profile</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <button
+                      type="button"
+                      className="nav-link btn btn-link text-dark"
+                      onClick={() => {
+                        sessionStorage.removeItem('user');
+                        this.forceUpdate();
+                        window.location.assign('/');
+                      }}
+                    >
+                      Log out
+                    </button>
+                  </NavItem>
+                </>
+              ) : (
+                <>
+                  <NavItem>
+                    <NavLink tag={Link} className="text-dark" to="/login">Log in</NavLink>
+                  </NavItem>
+                  <NavItem>
+                    <NavLink tag={Link} className="text-dark" to="/register">Register</NavLink>
+                  </NavItem>
+                </>
+              )}
             </ul>
           </Collapse>
         </Navbar>

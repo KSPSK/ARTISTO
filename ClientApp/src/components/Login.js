@@ -115,6 +115,10 @@ export default function Login() {
                 </fieldset>
             </form>
 
+            <p className="mt-3 mb-0">
+                No account yet? <Link to="/register">Create one</Link>
+            </p>
+
             <Link to="/" className="d-inline-block mt-3">
                 Back to home
             </Link>
