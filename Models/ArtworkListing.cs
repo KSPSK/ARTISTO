@@ -34,8 +34,8 @@ public class ArtworkListing
 
     public bool LocalPickupAvailable { get; set; }
 
-    public int? CreatorProfileId { get; set; }
+    public int? UserId { get; set; }
 
     [JsonIgnore]
-    public CreatorProfile? CreatorProfile { get; set; }
+    public User? User { get; set; }
 }

@@ -61,26 +61,37 @@ Content-Type: application/json
   "localPickupAvailable": false
 }
 
-### Create a creator profile
-POST {{HostAddress}}/api/creatorprofiles
+### Register a new user
+POST {{HostAddress}}/api/users/register
 Content-Type: application/json
 
 {
+  "username": "geronimo",
+  "password": "Password123!",
   "displayName": "Geronimo",
   "description": "Oil painter from Vilnius.",
   "city": "Vilnius"
 }
 
-### Get all creator profiles
-GET {{HostAddress}}/api/creatorprofiles
+### Login as user
+POST {{HostAddress}}/api/users/login
+Content-Type: application/json
+
+{
+  "username": "geronimo",
+  "password": "Password123!"
+}
+
+### Get all users
+GET {{HostAddress}}/api/users
 Accept: application/json
 
-### Get a creator profile
-GET {{HostAddress}}/api/creatorprofiles/1
+### Get a user by ID
+GET {{HostAddress}}/api/users/1
 Accept: application/json
 
-### Update a creator profile
-PUT {{HostAddress}}/api/creatorprofiles/1
+### Update a user profile
+PUT {{HostAddress}}/api/users/1
 Content-Type: application/json
 
 {
@@ -89,7 +100,7 @@ Content-Type: application/json
   "city": "Kaunas"
 }
 
-### Link a listing to a profile
+### Link a listing to a user
 PUT {{HostAddress}}/api/artworklistings/1
 Content-Type: application/json
 
@@ -100,18 +111,18 @@ Content-Type: application/json
   "creatorName": "Geronimo",
   "category": "Painting",
   "localPickupAvailable": true,
-  "creatorProfileId": 1
+  "userId": 1
 }
 
-### Get artwork listings of a creator
-GET {{HostAddress}}/api/creatorprofiles/1/artworklistings
+### Get artwork listings of a user
+GET {{HostAddress}}/api/users/1/artworklistings
 Accept: application/json
 
-### Get a profile that does not exist (expect 404)
-GET {{HostAddress}}/api/creatorprofiles/999
+### Get a user that does not exist (expect 404)
+GET {{HostAddress}}/api/users/999
 Accept: application/json
 
-### Link a listing to a profile that does not exist (expect 400)
+### Link a listing to a user that does not exist (expect 400)
 PUT {{HostAddress}}/api/artworklistings/1
 Content-Type: application/json
 
@@ -122,15 +133,16 @@ Content-Type: application/json
   "creatorName": "Geronimo",
   "category": "Painting",
   "localPickupAvailable": true,
-  "creatorProfileId": 999
+  "userId": 999
 }
 
-### Create a profile with invalid data (expect 400)
-POST {{HostAddress}}/api/creatorprofiles
+### Register with invalid data (expect 400)
+POST {{HostAddress}}/api/users/register
 Content-Type: application/json
 
 {
+  "username": "",
+  "password": "12",
   "displayName": "",
-  "description": "Missing display name and city.",
   "city": ""
 }
