@@ -3,6 +3,10 @@ import { ArtworkListings } from "./components/ArtworkListings";
 import ArtworkListingForm from "./components/ArtworkListingForm";
 import ArtworkListingDetails from "./components/ArtworkListingDetails";
 import Login from "./components/Login";
+import Register from "./components/Register";
+import Account from "./components/Account";
+import CreatorProfile from "./components/CreatorProfile";
+import CreatorProfileForm from "./components/CreatorProfileForm";
 
 const AppRoutes = [
     {
@@ -26,8 +30,24 @@ const AppRoutes = [
         element: <ArtworkListingDetails />
     },
     {
+        path: "/account",
+        element: <Account />
+    },
+    {
         path: "/login",
         element: <Login />
+    },
+    {
+        path: "/register",
+        element: <Register />
+    },
+    {
+        path: "/users/:id/edit",
+        element: <CreatorProfileForm />
+    },
+    {
+        path: "/users/:id",
+        element: <CreatorProfile />
     }
 ];
 

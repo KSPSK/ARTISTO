@@ -146,7 +146,15 @@ export default function ArtworkListingDetails() {
                     <dl className="listing-details-info">
                         <div>
                             <dt>Creator</dt>
-                            <dd>{listing.creatorName}</dd>
+                            <dd>
+                                {listing.userId ? (
+                                    <Link to={`/users/${listing.userId}`}>
+                                        {listing.creatorName}
+                                    </Link>
+                                ) : (
+                                    listing.creatorName
+                                )}
+                            </dd>
                         </div>
 
                         <div>

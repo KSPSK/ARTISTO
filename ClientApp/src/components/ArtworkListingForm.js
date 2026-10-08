@@ -79,6 +79,7 @@ export default function ArtworkListingForm() {
                     creatorName: listing.creatorName,
                     category: listing.category,
                     localPickupAvailable: listing.localPickupAvailable,
+                    userId: listing.userId ?? null,
                 });
 
                 setLoadedId(id);
@@ -169,15 +170,24 @@ export default function ArtworkListingForm() {
             : "/api/artworklistings";
 
         try {
+            const payload = {
+                ...form,
+                price: Number(form.price),
+            };
+
+            if (!isEditing) {
+                const stored = JSON.parse(sessionStorage.getItem("user") || "null");
+                if (stored?.id) {
+                    payload.userId = stored.id;
+                }
+            }
+
             const response = await fetch(url, {
                 method: isEditing ? "PUT" : "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    ...form,
-                    price: Number(form.price),
-                }),
+                body: JSON.stringify(payload),
             });
 
             if (!response.ok) {
