@@ -1,8 +1,12 @@
 using ARTISTO.Data;
 using ARTISTO.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace ARTISTO.Controllers;
 
@@ -11,11 +15,14 @@ namespace ARTISTO.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly ArtistoDbContext _context;
-    private readonly PasswordHasher<User> _passwordHasher = new();
+    private readonly IPasswordHasher<User> _passwordHasher;
 
-    public UsersController(ArtistoDbContext context)
+    public UsersController(
+        ArtistoDbContext context,
+        IPasswordHasher<User> passwordHasher)
     {
         _context = context;
+        _passwordHasher = passwordHasher;
     }
 
     [HttpPost("register")]
@@ -43,6 +50,7 @@ public class UsersController : ControllerBase
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
+        await SignInUser(user);
 
         return CreatedAtAction(
             nameof(GetById),
@@ -69,7 +77,45 @@ public class UsersController : ControllerBase
             return Unauthorized(new ApiErrorResponse("Invalid username or password."));
         }
 
+        if (result == PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            user.Password = _passwordHasher.HashPassword(user, request.Password);
+            await _context.SaveChangesAsync();
+        }
+
+        await SignInUser(user);
+
         return Ok(ToResponse(user));
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<UserResponse>> GetCurrentUser()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+        }
+
+        var user = await _context.Users.FindAsync(userId);
+        if (user is null)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return Unauthorized(new ApiErrorResponse("The authenticated user no longer exists."));
+        }
+
+        return Ok(ToResponse(user));
+    }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        return NoContent();
     }
 
     [HttpGet]
@@ -144,6 +190,25 @@ public class UsersController : ControllerBase
             Description = user.Description,
             City = user.City
         };
+    }
+
+    private async Task SignInUser(User user)
+    {
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new(ClaimTypes.Name, user.Username)
+        };
+
+        var identity = new ClaimsIdentity(
+            claims,
+            CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            principal,
+            new AuthenticationProperties { IsPersistent = false });
     }
 
     private static ApiErrorResponse CreateNotFoundResponse(int id)

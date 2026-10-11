@@ -16,6 +16,7 @@ GET {{HostAddress}}/api/artworklistings/999
 Accept: application/json
 
 ### Create a new artwork listing
+# Requires a successful registration or login request first.
 
 POST {{HostAddress}}/api/artworklistings
 Content-Type: application/json
@@ -81,6 +82,13 @@ Content-Type: application/json
   "username": "geronimo",
   "password": "Password123!"
 }
+
+### Get the currently authenticated user
+GET {{HostAddress}}/api/users/me
+Accept: application/json
+
+### Log out
+POST {{HostAddress}}/api/users/logout
 
 ### Get all users
 GET {{HostAddress}}/api/users

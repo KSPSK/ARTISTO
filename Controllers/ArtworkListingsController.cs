@@ -1,7 +1,9 @@
 using ARTISTO.Models;
 using ARTISTO.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace ARTISTO.Controllers;
 
@@ -44,16 +46,21 @@ public class ArtworkListingsController : ControllerBase
         return Ok(listing);
     }
 
+    [Authorize]
     [HttpPost]
+    [ProducesResponseType<ArtworkListing>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ArtworkListing>> Create(ArtworkListing listing)
     {
-        if (listing.UserId is not null &&
-            !await _context.Users.AnyAsync(u => u.Id == listing.UserId))
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId) ||
+            !await _context.Users.AnyAsync(u => u.Id == userId))
         {
-            return BadRequest(new ApiErrorResponse(
-                $"User {listing.UserId} was not found."));
+            return Unauthorized(new ApiErrorResponse(
+                "A valid user account is required to create a listing."));
         }
 
+        listing.UserId = userId;
         _context.ArtworkListings.Add(listing);
         await _context.SaveChangesAsync();
         return CreatedAtAction(
