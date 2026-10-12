@@ -7,7 +7,9 @@ namespace ARTISTO.Services;
 
 internal static class ArtworkImageFormatValidator
 {
-    public static string GetExtension(ReadOnlySpan<byte> data)
+    private const long MaximumPixelCount = 40_000_000;
+
+    public static string GetExtension(byte[] data)
     {
         try
         {
@@ -25,6 +27,13 @@ internal static class ArtworkImageFormatValidator
                 throw InvalidImage();
             }
 
+            var imageInfo = Image.Identify(data);
+            var dimensions = new ImageDimensions(imageInfo.Width, imageInfo.Height);
+            if (dimensions.PixelCount > MaximumPixelCount)
+            {
+                throw ImageTooLarge(dimensions);
+            }
+
             using var image = Image.Load(data);
             return extension;
         }
@@ -36,4 +45,10 @@ internal static class ArtworkImageFormatValidator
 
     private static ArtworkImageValidationException InvalidImage() =>
         new("The image must be a valid JPEG, PNG, or WebP file.");
+
+    private static ArtworkImageValidationException ImageTooLarge(ImageDimensions dimensions) =>
+        new(
+            $"The image dimensions are too large " +
+            $"({dimensions.Width}x{dimensions.Height}). " +
+            $"Images may contain at most {MaximumPixelCount:N0} pixels.");
 }
