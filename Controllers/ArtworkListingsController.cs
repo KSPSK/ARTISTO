@@ -92,7 +92,7 @@ public class ArtworkListingsController : ControllerBase
         existing.Category = listing.Category;
         existing.LocalPickupAvailable = listing.LocalPickupAvailable;
         existing.UserId = listing.UserId;
-        
+
         await _context.SaveChangesAsync();
         return Ok(existing);
     }
