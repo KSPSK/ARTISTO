@@ -7,7 +7,7 @@ namespace ARTISTO.Services;
 
 internal static class ArtworkImageFormatValidator
 {
-    private const long MaximumPixelCount = 40_000_000;
+    private const long MaximumPixelCount = 20_000_000;
 
     public static string GetExtension(byte[] data)
     {
