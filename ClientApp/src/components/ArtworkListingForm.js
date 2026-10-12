@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 const initialForm = {
     title: "",
@@ -23,6 +24,7 @@ export default function ArtworkListingForm() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { user, isLoading: authLoading, setUser } = useAuth();
     const isEditing = Boolean(id);
     const fromSearch = location.state?.fromSearch;
 
@@ -36,6 +38,7 @@ export default function ArtworkListingForm() {
     const [retryCount, setRetryCount] = useState(0);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isDeleted, setIsDeleted] = useState(false);
+    const [ownerId, setOwnerId] = useState(null);
 
     // Load the selected listing when the component mounts or when the id changes
     useEffect(() => {
@@ -45,6 +48,7 @@ export default function ArtworkListingForm() {
         setError("");
         setLoadError("");
         setLoadedId(null);
+        setOwnerId(null);
         setForm({ ...initialForm });
 
         if (!id) {
@@ -79,8 +83,8 @@ export default function ArtworkListingForm() {
                     creatorName: listing.creatorName,
                     category: listing.category,
                     localPickupAvailable: listing.localPickupAvailable,
-                    userId: listing.userId ?? null,
                 });
+                setOwnerId(listing.userId ?? null);
 
                 setLoadedId(id);
             } catch (err) {
@@ -133,6 +137,17 @@ export default function ArtworkListingForm() {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    setUser(null);
+                    setError("Your session has expired. Please log in again.");
+                    return;
+                }
+
+                if (response.status === 403) {
+                    setError("You can only delete your own listings.");
+                    return;
+                }
+
                 setError(
                     response.status === 404
                         ? "Listing not found. It may have been deleted."
@@ -175,13 +190,6 @@ export default function ArtworkListingForm() {
                 price: Number(form.price),
             };
 
-            if (!isEditing) {
-                const stored = JSON.parse(sessionStorage.getItem("user") || "null");
-                if (stored?.id) {
-                    payload.userId = stored.id;
-                }
-            }
-
             const response = await fetch(url, {
                 method: isEditing ? "PUT" : "POST",
                 headers: {
@@ -191,6 +199,17 @@ export default function ArtworkListingForm() {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    setUser(null);
+                    setError("Your session has expired. Please log in again.");
+                    return;
+                }
+
+                if (response.status === 403) {
+                    setError("You can only update your own listings.");
+                    return;
+                }
+
                 if (response.status === 400) {
                     const problem = await response.json().catch(() => null);
                     const messages = problem?.errors
@@ -239,6 +258,19 @@ export default function ArtworkListingForm() {
         );
     }
 
+    if (authLoading) {
+        return <p className="py-4" role="status">Checking your session...</p>;
+    }
+
+    if (!user) {
+        return (
+            <div className="py-4">
+                <p>You must be logged in to create or edit a listing.</p>
+                <Link to="/login" className="btn btn-primary">Log in</Link>
+            </div>
+        );
+    }
+
     if (isEditing && loadError) {
         return (
             <div className="py-4">
@@ -262,6 +294,15 @@ export default function ArtworkListingForm() {
             <p className="py-4" role="status">
                 Listing is loading...
             </p>
+        );
+    }
+
+    if (isEditing && (ownerId == null || String(ownerId) !== String(user.id))) {
+        return (
+            <div className="py-4">
+                <p>You can only edit your own listings.</p>
+                <Link to={`/listings/${id}`}>Back to listing</Link>
+            </div>
         );
     }
 

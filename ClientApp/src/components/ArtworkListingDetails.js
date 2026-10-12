@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 const categoryLabels = {
     Painting: "Painting",
@@ -13,6 +14,7 @@ const categoryLabels = {
 export default function ArtworkListingDetails() {
     const { id } = useParams();
     const location = useLocation();
+    const { user } = useAuth();
     const message = location.state?.message;
     const listingsPath = location.state?.fromSearch
         ? `/artworklistings?q=${encodeURIComponent(location.state.fromSearch)}`
@@ -120,6 +122,7 @@ export default function ArtworkListingDetails() {
         style: "currency",
         currency: "EUR",
     }).format(listing.price);
+    const isOwner = listing.userId != null && String(listing.userId) === String(user?.id);
 
     return (
         <main className="listing-details">
@@ -181,7 +184,7 @@ export default function ArtworkListingDetails() {
                             : "No description provided."}
                     </p>
 
-                    <div className="listing-details-actions">
+                    {isOwner && <div className="listing-details-actions">
                         <Link
                             to={`/listings/${listing.id}/edit`}
                             className="btn btn-primary"
@@ -193,7 +196,7 @@ export default function ArtworkListingDetails() {
                         >
                             Edit listing
                         </Link>
-                    </div>
+                    </div>}
                 </div>
             </div>
         </main>

@@ -31,6 +31,7 @@ Content-Type: application/json
 }
 
 ### Update an artwork listing
+# Requires login as the listing owner. Ownerless listings return 403.
 
 PUT {{HostAddress}}/api/artworklistings/1
 Content-Type: application/json
@@ -45,6 +46,7 @@ Content-Type: application/json
 }
 
 ### Delete an artwork listing
+# Requires login as the listing owner. Ownerless listings return 403.
 
 DELETE {{HostAddress}}/api/artworklistings/2
 
@@ -99,6 +101,7 @@ GET {{HostAddress}}/api/users/1
 Accept: application/json
 
 ### Update a user profile
+# Requires login as this user.
 PUT {{HostAddress}}/api/users/1
 Content-Type: application/json
 
@@ -108,20 +111,6 @@ Content-Type: application/json
   "city": "Kaunas"
 }
 
-### Link a listing to a user
-PUT {{HostAddress}}/api/artworklistings/1
-Content-Type: application/json
-
-{
-  "title": "Blue Horizon",
-  "description": "A small original seascape painting.",
-  "price": 150.00,
-  "creatorName": "Geronimo",
-  "category": "Painting",
-  "localPickupAvailable": true,
-  "userId": 1
-}
-
 ### Get artwork listings of a user
 GET {{HostAddress}}/api/users/1/artworklistings
 Accept: application/json
@@ -129,20 +118,6 @@ Accept: application/json
 ### Get a user that does not exist (expect 404)
 GET {{HostAddress}}/api/users/999
 Accept: application/json
-
-### Link a listing to a user that does not exist (expect 400)
-PUT {{HostAddress}}/api/artworklistings/1
-Content-Type: application/json
-
-{
-  "title": "Blue Horizon",
-  "description": "A small original seascape painting.",
-  "price": 150.00,
-  "creatorName": "Geronimo",
-  "category": "Painting",
-  "localPickupAvailable": true,
-  "userId": 999
-}
 
 ### Register with invalid data (expect 400)
 POST {{HostAddress}}/api/users/register

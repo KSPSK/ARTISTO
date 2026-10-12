@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 export default function CreatorProfileForm() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { user: currentUser, isLoading: authLoading, setUser } = useAuth();
     const [form, setForm] = useState({
         displayName: "",
         description: "",
@@ -84,6 +86,17 @@ export default function CreatorProfileForm() {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    setUser(null);
+                    setError("Your session has expired. Please log in again.");
+                    return;
+                }
+
+                if (response.status === 403) {
+                    setError("You can only update your own profile.");
+                    return;
+                }
+
                 const body = await response.json().catch(() => null);
                 const message = body?.message
                     || (body?.errors ? Object.values(body.errors).flat().join(" ") : "");
@@ -92,11 +105,7 @@ export default function CreatorProfileForm() {
             }
 
             const saved = await response.json();
-            const stored = JSON.parse(sessionStorage.getItem("user") || "null");
-
-            if (stored && String(stored.id) === String(saved.id)) {
-                sessionStorage.setItem("user", JSON.stringify(saved));
-            }
+            setUser(saved);
 
             navigate(`/users/${saved.id}`, {
                 state: { message: "Profile updated." },
@@ -113,6 +122,28 @@ export default function CreatorProfileForm() {
             <p className="py-4" role="status">
                 Loading profile...
             </p>
+        );
+    }
+
+    if (authLoading) {
+        return <p className="py-4" role="status">Checking your session...</p>;
+    }
+
+    if (!currentUser) {
+        return (
+            <div className="py-4">
+                <p>You must be logged in to edit a profile.</p>
+                <Link to="/login" className="btn btn-primary">Log in</Link>
+            </div>
+        );
+    }
+
+    if (String(currentUser.id) !== String(id)) {
+        return (
+            <div className="py-4">
+                <p>You can only edit your own profile.</p>
+                <Link to={`/users/${id}`}>Back to profile</Link>
+            </div>
         );
     }
 
