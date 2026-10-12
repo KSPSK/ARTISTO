@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 async function readError(response, fallback) {
     const body = await response.json().catch(() => null);
@@ -17,6 +18,7 @@ async function readError(response, fallback) {
 
 export default function Register() {
     const navigate = useNavigate();
+    const { isLoading: authLoading, setUser } = useAuth();
     const [form, setForm] = useState({
         username: "",
         password: "",
@@ -59,7 +61,7 @@ export default function Register() {
             }
 
             const user = await response.json();
-            sessionStorage.setItem("user", JSON.stringify(user));
+            setUser(user);
 
             navigate(`/users/${user.id}`, {
                 replace: true,
@@ -70,6 +72,10 @@ export default function Register() {
         } finally {
             setIsLoading(false);
         }
+    }
+
+    if (authLoading) {
+        return <p className="py-4" role="status">Checking your session...</p>;
     }
 
     return (
