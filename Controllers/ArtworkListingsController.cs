@@ -110,7 +110,7 @@ public class ArtworkListingsController : ControllerBase
         existing.CreatorName = request.CreatorName;
         existing.Category = request.Category;
         existing.LocalPickupAvailable = request.LocalPickupAvailable;
-        
+
         await _context.SaveChangesAsync();
         return Ok(existing);
     }
