@@ -149,3 +149,46 @@ Content-Type: application/json
   "displayName": "",
   "city": ""
 }
+
+### Place a new order
+# Requires login.
+POST {{HostAddress}}/api/orders
+Content-Type: application/json
+
+{
+  "artworkListingId": 1,
+  "pickupNotes": "Can pick up Saturday afternoon in Vilnius Old Town."
+}
+
+### Get orders of authenticated user
+GET {{HostAddress}}/api/orders
+Accept: application/json
+
+### Get orders as buyer
+GET {{HostAddress}}/api/orders?role=buyer
+Accept: application/json
+
+### Get orders as seller
+GET {{HostAddress}}/api/orders?role=seller
+Accept: application/json
+
+### Get single order by id
+GET {{HostAddress}}/api/orders/1
+Accept: application/json
+
+### Seller confirms handover
+# Requires login as the seller. Order must be Pending.
+POST {{HostAddress}}/api/orders/1/handover
+
+### Buyer confirms receipt (completes order)
+# Requires login as the buyer. Order must be HandedOver.
+POST {{HostAddress}}/api/orders/1/complete
+
+### Cancel order
+# Requires login as either buyer or seller.
+POST {{HostAddress}}/api/orders/1/cancel
+Content-Type: application/json
+
+{
+  "reason": "Unable to schedule pickup this week."
+}

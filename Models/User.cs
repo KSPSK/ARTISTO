@@ -27,4 +27,10 @@ public class User
 
     [JsonIgnore]
     public ICollection<ArtworkListing> ArtworkListings { get; set; } = new List<ArtworkListing>();
+
+    [JsonIgnore]
+    public ICollection<Order> Purchases { get; set; } = new List<Order>();
+
+    [JsonIgnore]
+    public ICollection<Order> Sales { get; set; } = new List<Order>();
 }

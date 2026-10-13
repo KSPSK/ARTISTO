@@ -12,6 +12,7 @@ public class ArtistoDbContext : DbContext
 
     public DbSet<ArtworkListing> ArtworkListings => Set<ArtworkListing>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<Order> Orders => Set<Order>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,5 +25,23 @@ public class ArtistoDbContext : DbContext
             .WithOne(a => a.User)
             .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.Buyer)
+            .WithMany(u => u.Purchases)
+            .HasForeignKey(o => o.BuyerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.Seller)
+            .WithMany(u => u.Sales)
+            .HasForeignKey(o => o.SellerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.ArtworkListing)
+            .WithMany()
+            .HasForeignKey(o => o.ArtworkListingId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
