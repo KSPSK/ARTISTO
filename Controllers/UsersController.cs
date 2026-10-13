@@ -161,11 +161,25 @@ public class UsersController : ControllerBase
         return Ok(listings);
     }
 
+    [Authorize]
     [HttpPut("{id:int}")]
     [ProducesResponseType<UserResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> Update(int id, UserUpdateRequest request)
     {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+        }
+
+        if (userId != id)
+        {
+            return Forbid();
+        }
+
         var existing = await _context.Users.FindAsync(id);
         if (existing is null)
         {

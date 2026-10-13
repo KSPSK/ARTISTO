@@ -50,17 +50,26 @@ public class ArtworkListingsController : ControllerBase
     [HttpPost]
     [ProducesResponseType<ArtworkListing>(StatusCodes.Status201Created)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ArtworkListing>> Create(ArtworkListing listing)
+    public async Task<ActionResult<ArtworkListing>> Create(ArtworkListingWriteRequest request)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId) ||
+        if (!TryGetAuthenticatedUserId(out var userId) ||
             !await _context.Users.AnyAsync(u => u.Id == userId))
         {
             return Unauthorized(new ApiErrorResponse(
                 "A valid user account is required to create a listing."));
         }
 
-        listing.UserId = userId;
+        var listing = new ArtworkListing
+        {
+            Title = request.Title,
+            Description = request.Description,
+            Price = request.Price,
+            CreatorName = request.CreatorName,
+            Category = request.Category,
+            LocalPickupAvailable = request.LocalPickupAvailable,
+            UserId = userId
+        };
+
         _context.ArtworkListings.Add(listing);
         await _context.SaveChangesAsync();
         return CreatedAtAction(
@@ -69,42 +78,67 @@ public class ArtworkListingsController : ControllerBase
             listing);
     }
 
+    [Authorize]
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<ArtworkListing>> Update(int id, ArtworkListing listing)
+    [ProducesResponseType<ArtworkListing>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArtworkListing>> Update(
+        int id,
+        ArtworkListingWriteRequest request)
     {
+        if (!TryGetAuthenticatedUserId(out var userId))
+        {
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+        }
+
         var existing = await _context.ArtworkListings.FindAsync(id);
         if (existing is null)
         {
             return NotFound(CreateNotFoundResponse(id));
         }
 
-        if (listing.UserId is not null &&
-            !await _context.Users.AnyAsync(u => u.Id == listing.UserId))
+        if (existing.UserId is null || existing.UserId != userId)
         {
-            return BadRequest(new ApiErrorResponse(
-                $"User {listing.UserId} was not found."));
+            return Forbid();
         }
-        // Could use .SetValues instead of updating fields seperately
-        existing.Title = listing.Title;
-        existing.Description = listing.Description;
-        existing.Price = listing.Price;
-        existing.CreatorName = listing.CreatorName;
-        existing.Category = listing.Category;
-        existing.LocalPickupAvailable = listing.LocalPickupAvailable;
-        existing.UserId = listing.UserId;
+
+        existing.Title = request.Title;
+        existing.Description = request.Description;
+        existing.Price = request.Price;
+        existing.CreatorName = request.CreatorName;
+        existing.Category = request.Category;
+        existing.LocalPickupAvailable = request.LocalPickupAvailable;
 
         await _context.SaveChangesAsync();
         return Ok(existing);
     }
 
+    [Authorize]
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
+        if (!TryGetAuthenticatedUserId(out var userId))
+        {
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+        }
+
         var existing = await _context.ArtworkListings.FindAsync(id);
         if (existing is null)
         {
             return NotFound(CreateNotFoundResponse(id));
         }
+
+        if (existing.UserId is null || existing.UserId != userId)
+        {
+            return Forbid();
+        }
+
         _context.ArtworkListings.Remove(existing);
         await _context.SaveChangesAsync();
         return NoContent();
@@ -113,5 +147,10 @@ public class ArtworkListingsController : ControllerBase
     private static ApiErrorResponse CreateNotFoundResponse(int id)
     {
         return new ApiErrorResponse($"Artwork listing {id} was not found.");
+    }
+
+    private bool TryGetAuthenticatedUserId(out int userId)
+    {
+        return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
     }
 }

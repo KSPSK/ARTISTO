@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
-
-function currentUser() {
-  try {
-    return JSON.parse(sessionStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-}
+import { useAuth } from "../AuthContext";
 
 export default function CreatorProfile() {
   const { id } = useParams();
   const location = useLocation();
+  const { user: currentUser } = useAuth();
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +13,7 @@ export default function CreatorProfile() {
   const [notFound, setNotFound] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const message = location.state?.message;
-  const isOwnProfile = String(currentUser()?.id) === String(id);
+  const isOwnProfile = String(currentUser?.id) === String(id);
 
   useEffect(() => {
     const controller = new AbortController();

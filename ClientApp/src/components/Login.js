@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { isLoading: authLoading, setUser } = useAuth();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -41,7 +43,7 @@ export default function Login() {
 
       const user = await response.json();
 
-      sessionStorage.setItem("user", JSON.stringify(user));
+      setUser(user);
 
       navigate("/artworklistings", {
         replace: true,
@@ -54,6 +56,10 @@ export default function Login() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  if (authLoading) {
+    return <p className="py-4" role="status">Checking your session...</p>;
   }
 
   return (
