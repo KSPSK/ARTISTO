@@ -118,6 +118,7 @@ public class ArtworkListingsController : ControllerBase
     [Authorize]
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
@@ -137,6 +138,12 @@ public class ArtworkListingsController : ControllerBase
         if (existing.UserId is null || existing.UserId != userId)
         {
             return Forbid();
+        }
+
+        var hasOrders = await _context.Orders.AnyAsync(o => o.ArtworkListingId == id);
+        if (hasOrders)
+        {
+            return BadRequest(new ApiErrorResponse("Cannot delete an artwork listing that has existing orders."));
         }
 
         _context.ArtworkListings.Remove(existing);

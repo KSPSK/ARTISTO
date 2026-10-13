@@ -14,6 +14,14 @@ public enum ArtworkCategory
     Other
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ArtworkListingStatus
+{
+    Available,
+    Reserved,
+    Sold
+}
+
 public class ArtworkListing
 {
     public int Id { get; set; }
@@ -31,6 +39,9 @@ public class ArtworkListing
     public string CreatorName { get; set; } = string.Empty;
 
     public ArtworkCategory Category { get; set; }
+
+    [ConcurrencyCheck]
+    public ArtworkListingStatus Status { get; set; } = ArtworkListingStatus.Available;
 
     public bool LocalPickupAvailable { get; set; }
 
