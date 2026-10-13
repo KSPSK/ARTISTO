@@ -40,6 +40,7 @@ public class ArtworkListing
 
     public ArtworkCategory Category { get; set; }
 
+    [ConcurrencyCheck]
     public ArtworkListingStatus Status { get; set; } = ArtworkListingStatus.Available;
 
     public bool LocalPickupAvailable { get; set; }

@@ -141,7 +141,16 @@ public class OrdersController : ControllerBase
         listing.Status = ArtworkListingStatus.Reserved;
 
         _context.Orders.Add(order);
-        await _context.SaveChangesAsync();
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new ApiErrorResponse(
+                "This artwork listing was already reserved by another concurrent order."));
+        }
 
         var response = ToResponse(order);
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, response);
