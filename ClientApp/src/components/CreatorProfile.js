@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 
 export default function CreatorProfile() {
@@ -141,6 +142,7 @@ export default function CreatorProfile() {
         <div className="artwork-grid">
           {listings.map((listing) => (
             <div className="artwork-card" key={listing.id}>
+              <ListingImage imageUrl={listing.imageUrl} title={listing.title} />
               <h3 className="artwork-title">{listing.title}</h3>
               <p className="artwork-price">{listing.price} €</p>
               <Link className="btn btn-primary artwork-open" to={`/listings/${listing.id}`}>
