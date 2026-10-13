@@ -47,8 +47,28 @@ Content-Type: application/json
 
 ### Delete an artwork listing
 # Requires login as the listing owner. Ownerless listings return 403.
+# Also deletes the listing image file when one is stored.
 
 DELETE {{HostAddress}}/api/artworklistings/2
+
+### Upload or replace a listing image
+# Requires login as the listing owner. Send a form field named image.
+# JPEG, PNG, or WebP, up to 5 MB. The response includes imageUrl.
+
+POST {{HostAddress}}/api/artworklistings/1/image
+Content-Type: multipart/form-data; boundary=ArtistoImage
+
+--ArtistoImage
+Content-Disposition: form-data; name="image"; filename="artwork.png"
+Content-Type: image/png
+
+< ./artwork.png
+--ArtistoImage--
+
+### Remove a listing image
+# Requires login as the listing owner.
+
+DELETE {{HostAddress}}/api/artworklistings/1/image
 
 ### Create a listing with invalid data (expect 400 Bad Request)
 

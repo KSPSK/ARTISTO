@@ -1,5 +1,6 @@
 using ARTISTO.Models;
 using ARTISTO.Data;
+using ARTISTO.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +13,12 @@ namespace ARTISTO.Controllers;
 public class ArtworkListingsController : ControllerBase
 {
     private readonly ArtistoDbContext _context;
+    private readonly IArtworkImageService _images;
 
-    public ArtworkListingsController(ArtistoDbContext context)
+    public ArtworkListingsController(ArtistoDbContext context, IArtworkImageService images)
     {
         _context = context;
+        _images = images;
     }
 
     [HttpGet]
@@ -139,8 +142,89 @@ public class ArtworkListingsController : ControllerBase
             return Forbid();
         }
 
+        var imageUrl = existing.ImageUrl;
         _context.ArtworkListings.Remove(existing);
         await _context.SaveChangesAsync();
+        _images.Delete(imageUrl);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("{id:int}/image")]
+    [ProducesResponseType<ArtworkListing>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArtworkListing>> UploadImage(int id, IFormFile? image)
+    {
+        if (!TryGetAuthenticatedUserId(out var userId))
+        {
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+        }
+
+        var existing = await _context.ArtworkListings.FindAsync(id);
+        if (existing is null)
+        {
+            return NotFound(CreateNotFoundResponse(id));
+        }
+
+        if (existing.UserId is null || existing.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        if (image is null)
+        {
+            return BadRequest(new ApiErrorResponse("An image file is required."));
+        }
+
+        string imageUrl;
+        try
+        {
+            imageUrl = await _images.SaveAsync(image);
+        }
+        catch (ArtworkImageValidationException exception)
+        {
+            return BadRequest(new ApiErrorResponse(exception.Message));
+        }
+
+        var previousImageUrl = existing.ImageUrl;
+        existing.ImageUrl = imageUrl;
+        await _context.SaveChangesAsync();
+        _images.Delete(previousImageUrl);
+
+        return Ok(existing);
+    }
+
+    [Authorize]
+    [HttpDelete("{id:int}/image")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteImage(int id)
+    {
+        if (!TryGetAuthenticatedUserId(out var userId))
+        {
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+        }
+
+        var existing = await _context.ArtworkListings.FindAsync(id);
+        if (existing is null)
+        {
+            return NotFound(CreateNotFoundResponse(id));
+        }
+
+        if (existing.UserId is null || existing.UserId != userId)
+        {
+            return Forbid();
+        }
+
+        var imageUrl = existing.ImageUrl;
+        existing.ImageUrl = null;
+        await _context.SaveChangesAsync();
+        _images.Delete(imageUrl);
         return NoContent();
     }
 
