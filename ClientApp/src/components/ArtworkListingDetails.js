@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 
 const categoryLabels = {
@@ -139,9 +140,7 @@ export default function ArtworkListingDetails() {
       </Link>
 
       <div className="listing-details-grid">
-        <div className="listing-details-image">
-          <span>No image available</span>
-        </div>
+          <ListingImage imageUrl={listing.imageUrl} title={listing.title} large />
 
         <div className="listing-details-content">
           <h1>{listing.title}</h1>

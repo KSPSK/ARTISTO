@@ -45,6 +45,8 @@ public class ArtworkListing
 
     public bool LocalPickupAvailable { get; set; }
 
+    public string? ImageUrl { get; set; }
+
     public int? UserId { get; set; }
 
     [JsonIgnore]

@@ -39,6 +39,13 @@ export default function ArtworkListingForm() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
   const [ownerId, setOwnerId] = useState(null);
+  const [persistedId, setPersistedId] = useState(id || null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [currentImageUrl, setCurrentImageUrl] = useState("");
+  const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
+  const [imageError, setImageError] = useState(location.state?.imageError || "");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Load the selected listing when the component mounts or when the id changes
   useEffect(() => {
@@ -49,6 +56,11 @@ export default function ArtworkListingForm() {
     setLoadError("");
     setLoadedId(null);
     setOwnerId(null);
+    setPersistedId(id || null);
+    setSelectedImage(null);
+    setPreviewUrl("");
+    setCurrentImageUrl("");
+    setRemoveCurrentImage(false);
     setForm({ ...initialForm });
 
     if (!id) {
@@ -85,6 +97,8 @@ export default function ArtworkListingForm() {
           localPickupAvailable: listing.localPickupAvailable,
         });
         setOwnerId(listing.userId ?? null);
+        setCurrentImageUrl(listing.imageUrl || "");
+        setPersistedId(listing.id);
 
         setLoadedId(id);
       } catch (err) {
@@ -116,10 +130,43 @@ export default function ArtworkListingForm() {
     setIsDeleted(false);
     setSuccess("");
     setError("");
+    setImageError("");
+  }
+
+  function handleImageChange(event) {
+    const file = event.target.files?.[0];
+    setImageError("");
+    setRemoveCurrentImage(false);
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
+    if (!file) {
+      setSelectedImage(null);
+      setPreviewUrl("");
+      return;
+    }
+
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type) || file.size > 5 * 1024 * 1024) {
+      setSelectedImage(null);
+      setPreviewUrl("");
+      setImageError(
+        file.size > 5 * 1024 * 1024
+          ? "The image must be 5 MB or smaller."
+          : "Choose a JPEG, PNG, or WebP image."
+      );
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedImage(file);
+    setPreviewUrl(URL.createObjectURL(file));
   }
 
   async function handleDelete() {
-    if (isSaving || isDeleting) return;
+    if (isSaving || isDeleting || isUploading) return;
 
     const confirmed = window.confirm(
       "Are you sure you want to delete this listing?"
@@ -173,15 +220,16 @@ export default function ArtworkListingForm() {
   async function handleSubmit(event) {
     event.preventDefault();
 
-    if (isSaving || isDeleting) return;
+    if (isSaving || isDeleting || isUploading) return;
 
     setSuccess("");
     setError("");
+    setImageError("");
     setIsSaving(true);
 
-    // When editing send the request with the listing ID
-    const url = isEditing
-      ? `/api/artworklistings/${id}`
+    const listingId = persistedId;
+    const url = listingId
+      ? `/api/artworklistings/${listingId}`
       : "/api/artworklistings";
 
     try {
@@ -191,7 +239,7 @@ export default function ArtworkListingForm() {
       };
 
       const response = await fetch(url, {
-        method: isEditing ? "PUT" : "POST",
+        method: listingId ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -228,10 +276,43 @@ export default function ArtworkListingForm() {
       }
 
       const saved = await response.json();
+      setPersistedId(saved.id);
+
+      if (selectedImage) {
+        setIsUploading(true);
+        const imageBody = new FormData();
+        imageBody.append("image", selectedImage);
+        const imageResponse = await fetch(`/api/artworklistings/${saved.id}/image`, {
+          method: "POST",
+          body: imageBody,
+        });
+
+        if (!imageResponse.ok) {
+          const problem = await imageResponse.json().catch(() => null);
+          const message = problem?.message || "The listing was saved, but the image was not uploaded.";
+          if (!id) {
+            navigate(`/listings/${saved.id}/edit`, {
+              replace: true,
+              state: { imageError: message, fromSearch },
+            });
+          } else {
+            setImageError(message);
+          }
+          return;
+        }
+      } else if (removeCurrentImage && currentImageUrl) {
+        const imageResponse = await fetch(`/api/artworklistings/${saved.id}/image`, {
+          method: "DELETE",
+        });
+        if (!imageResponse.ok && imageResponse.status !== 204) {
+          setImageError("The listing was saved, but the image was not removed.");
+          return;
+        }
+      }
 
       navigate(`/listings/${saved.id}`, {
         state: {
-          message: isEditing
+          message: listingId
             ? "Listing updated."
             : "Listing created.",
           fromSearch,
@@ -241,6 +322,7 @@ export default function ArtworkListingForm() {
       setError("Failed to connect to the server. Please try again.");
     } finally {
       setIsSaving(false);
+      setIsUploading(false);
     }
   }
 
@@ -330,8 +412,14 @@ export default function ArtworkListingForm() {
         </div>
       )}
 
+      {imageError && (
+        <div className="alert alert-danger" role="alert">
+          {imageError}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} noValidate>
-        <fieldset disabled={isSaving || isDeleting}>
+        <fieldset disabled={isSaving || isDeleting || isUploading}>
           <div className="mb-3">
             <label htmlFor="title" className="form-label">
               Title
@@ -425,12 +513,49 @@ export default function ArtworkListingForm() {
             </label>
           </div>
 
+          <div className="mb-3">
+            <label htmlFor="image" className="form-label">
+              Image
+            </label>
+            <input
+              id="image"
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="form-control"
+              onChange={handleImageChange}
+            />
+            <div className="form-text">Optional. JPEG, PNG, or WebP, up to 5 MB.</div>
+            {previewUrl && (
+              <img className="listing-image-preview" src={previewUrl} alt="Selected artwork" />
+            )}
+            {!previewUrl && currentImageUrl && !removeCurrentImage && (
+              <img className="listing-image-preview" src={currentImageUrl} alt="Current artwork" />
+            )}
+            {currentImageUrl && !selectedImage && (
+              <div className="form-check mt-2">
+                <input
+                  id="removeCurrentImage"
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={removeCurrentImage}
+                  onChange={(event) => setRemoveCurrentImage(event.target.checked)}
+                />
+                <label htmlFor="removeCurrentImage" className="form-check-label">
+                  Remove current image
+                </label>
+              </div>
+            )}
+          </div>
+
           <button type="submit" className="btn btn-primary">
-            {isSaving
-              ? "Saving..."
-              : isEditing
-                ? "Save changes"
-                : "Create Listing"}
+            {isUploading
+              ? "Uploading image..."
+              : isSaving
+                ? "Saving..."
+                : persistedId
+                  ? "Save changes"
+                  : "Create Listing"}
           </button>
           {isEditing && (
             <button

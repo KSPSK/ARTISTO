@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { ListingImage } from "./ListingImage";
 
 export function ArtworkListings() {
   const [searchParams] = useSearchParams();
@@ -106,8 +107,15 @@ export function ArtworkListings() {
       <div className="artwork-grid">
         {listings.map((listing) => (
           <div className="artwork-card" key={listing.id}>
+            <ListingImage imageUrl={listing.imageUrl} title={listing.title} />
             <h3 className="artwork-title">{listing.title}</h3>
-            <p className="artwork-creator">{listing.creatorName}</p>
+            <p className="artwork-creator">
+              {listing.userId ? (
+                <Link to={`/users/${listing.userId}`}>{listing.creatorName}</Link>
+              ) : (
+                listing.creatorName
+              )}
+            </p>
             <p className="artwork-price">{listing.price} €</p>
             <p className="artwork-category">
               {listing.category === "DigitalArt" ? "Digital art" : listing.category}

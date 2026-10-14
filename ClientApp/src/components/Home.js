@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { ListingImage } from "./ListingImage";
 
 function formatCategory(category) {
   return category === "DigitalArt" ? "Digital art" : category;
@@ -104,8 +105,15 @@ export function Home() {
           <div className="artwork-grid">
             {featured.map((listing) => (
               <div className="artwork-card" key={listing.id}>
+                <ListingImage imageUrl={listing.imageUrl} title={listing.title} />
                 <h3 className="artwork-title">{listing.title}</h3>
-                <p className="artwork-creator">{listing.creatorName}</p>
+                <p className="artwork-creator">
+                  {listing.userId ? (
+                    <Link to={`/users/${listing.userId}`}>{listing.creatorName}</Link>
+                  ) : (
+                    listing.creatorName
+                  )}
+                </p>
                 <p className="artwork-price">{listing.price} €</p>
                 <p className="artwork-category">
                   {formatCategory(listing.category)}

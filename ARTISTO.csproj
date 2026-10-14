@@ -58,6 +58,6 @@
     </ItemGroup>
   </Target>
 	<PropertyGroup>
-		<DefaultItemExcludes>$(DefaultItemExcludes);ARTISTO.Server\**;artisto.client\**</DefaultItemExcludes>
+		<DefaultItemExcludes>$(DefaultItemExcludes);ARTISTO.Server\**;artisto.client\**;ARTISTO.Tests\**</DefaultItemExcludes>
 	</PropertyGroup>
 </Project>
