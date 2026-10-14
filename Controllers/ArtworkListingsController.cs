@@ -198,7 +198,17 @@ public class ArtworkListingsController : ControllerBase
 
         var previousImageUrl = existing.ImageUrl;
         existing.ImageUrl = imageUrl;
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch
+        {
+            existing.ImageUrl = previousImageUrl;
+            _images.Delete(imageUrl);
+            throw;
+        }
+
         _images.Delete(previousImageUrl);
 
         return Ok(existing);
