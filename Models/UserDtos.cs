@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ARTISTO.Models;
 
-public class UserRegisterRequest
+public class UserRegisterRequest : IValidatableObject
 {
     [Required]
     [MaxLength(50)]
@@ -22,6 +22,18 @@ public class UserRegisterRequest
     [Required]
     [MaxLength(100)]
     public string City { get; set; } = string.Empty;
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!string.IsNullOrWhiteSpace(Username) &&
+            !string.IsNullOrEmpty(Password) &&
+            string.Equals(Username.Trim(), Password, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return new ValidationResult(
+                "Password must not be the same as the username.",
+                new[] { nameof(Password) });
+        }
+    }
 }
 
 public class UserLoginRequest
