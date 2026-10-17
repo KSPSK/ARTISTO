@@ -119,6 +119,12 @@ export default function ArtworkListingForm() {
     return () => controller.abort();
   }, [id, retryCount]);
 
+  useEffect(() => {
+    if (location.state?.imageError) {
+      setImageError(location.state.imageError);
+    }
+  }, [id, location.state]);
+
   function handleChange(event) {
     const { name, value, type, checked } = event.target;
 
