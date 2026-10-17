@@ -192,3 +192,34 @@ Content-Type: application/json
 {
   "reason": "Unable to schedule pickup this week."
 }
+
+### Invalid order role (expect 400)
+# Requires login.
+GET {{HostAddress}}/api/orders?role=invalid
+Accept: application/json
+
+### Case-insensitive buyer role (expect 200)
+# Requires login.
+GET {{HostAddress}}/api/orders?role=BUYER
+Accept: application/json
+
+### All orders of the authenticated user (expect 200)
+# Returns orders where the user is buyer or seller.
+GET {{HostAddress}}/api/orders
+Accept: application/json
+
+### Missing order (expect 404)
+# Replace the ID if it exists in your test database.
+GET {{HostAddress}}/api/orders/999999
+Accept: application/json
+
+### Order details as an unrelated user (expect 403)
+# Log in as a user who is neither buyer nor seller.
+# Replace 1 with an existing order ID.
+GET {{HostAddress}}/api/orders/1
+Accept: application/json
+
+### Orders without authentication (expect 401)
+# Run the logout request before this request.
+GET {{HostAddress}}/api/orders?role=buyer
+Accept: application/json
