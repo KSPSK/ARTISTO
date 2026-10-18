@@ -21,15 +21,28 @@ public class OrdersController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType<IEnumerable<OrderResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IEnumerable<OrderResponse>>> GetMyOrders([FromQuery] string? role)
     {
         if (!TryGetAuthenticatedUserId(out var userId))
         {
-            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+            return Unauthorized(new ApiErrorResponse(
+                "The authentication session is invalid."));
+        }
+
+        role = role?.Trim();
+
+        if (!string.IsNullOrEmpty(role)
+            && !string.Equals(role, "buyer", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(role, "seller", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest(new ApiErrorResponse(
+                "Role must be either 'buyer' or 'seller'."));
         }
 
         var query = _context.Orders
+            .AsNoTracking()
             .Include(o => o.ArtworkListing)
             .Include(o => o.Buyer)
             .Include(o => o.Seller)
@@ -50,6 +63,7 @@ public class OrdersController : ControllerBase
 
         var orders = await query
             .OrderByDescending(o => o.CreatedAtUtc)
+            .ThenByDescending(o => o.Id)
             .ToListAsync();
 
         return Ok(orders.Select(ToResponse));
@@ -64,10 +78,12 @@ public class OrdersController : ControllerBase
     {
         if (!TryGetAuthenticatedUserId(out var userId))
         {
-            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
+            return Unauthorized(new ApiErrorResponse(
+                "The authentication session is invalid."));
         }
 
         var order = await _context.Orders
+            .AsNoTracking()
             .Include(o => o.ArtworkListing)
             .Include(o => o.Buyer)
             .Include(o => o.Seller)
@@ -302,6 +318,7 @@ public class OrdersController : ControllerBase
             Id = order.Id,
             ArtworkListingId = order.ArtworkListingId,
             ArtworkTitle = order.ArtworkListing?.Title ?? string.Empty,
+            ArtworkImageUrl = order.ArtworkListing?.ImageUrl,
             ArtworkCategory = order.ArtworkListing?.Category ?? ArtworkCategory.Other,
             Price = order.Price,
             BuyerId = order.BuyerId,
@@ -309,6 +326,7 @@ public class OrdersController : ControllerBase
             BuyerCity = order.Buyer?.City ?? string.Empty,
             SellerId = order.SellerId,
             SellerDisplayName = order.Seller?.DisplayName ?? string.Empty,
+            SellerCity = order.Seller?.City ?? string.Empty,
             Status = order.Status,
             PickupNotes = order.PickupNotes,
             CancellationReason = order.CancellationReason,

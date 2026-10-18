@@ -25,6 +25,8 @@ public sealed class OrderResponse
 
     public string ArtworkTitle { get; set; } = string.Empty;
 
+    public string? ArtworkImageUrl { get; set; }
+
     public ArtworkCategory ArtworkCategory { get; set; }
 
     public decimal Price { get; set; }
@@ -38,6 +40,8 @@ public sealed class OrderResponse
     public int SellerId { get; set; }
 
     public string SellerDisplayName { get; set; } = string.Empty;
+
+    public string SellerCity { get; set; } = string.Empty;
 
     public OrderStatus Status { get; set; }
 
