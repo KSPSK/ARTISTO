@@ -27,7 +27,10 @@ public class UserRegisterRequest : IValidatableObject
     {
         if (!string.IsNullOrWhiteSpace(Username) &&
             !string.IsNullOrEmpty(Password) &&
-            string.Equals(Username.Trim(), Password, StringComparison.OrdinalIgnoreCase))
+            string.Equals(
+                Username.Trim(),
+                Password.Trim(),
+                StringComparison.OrdinalIgnoreCase))
         {
             yield return new ValidationResult(
                 "Password must not be the same as the username.",
