@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import "./Login.css";
+import logo from "../images/artisto_logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -63,10 +65,14 @@ export default function Login() {
   }
 
   return (
-    <main className="mx-auto py-5" style={{ maxWidth: 400 }}>
-      <h1 className="mb-2">Log in</h1>
+    <section className="login-page">
+      <img
+      src={logo}
+      alt="ARTISTO"
+      className="login-logo"
+      />
       <p className="text-muted mb-4">
-        Log in to your ARTISTO account.
+        LOG IN TO YOUR ARTISTO ACCOUNT.
       </p>
 
       {error && (
@@ -86,6 +92,7 @@ export default function Login() {
               id="username"
               name="username"
               type="text"
+              placeholder="Enter your username"
               className="form-control"
               autoComplete="username"
               value={username}
@@ -104,6 +111,7 @@ export default function Login() {
               id="password"
               name="password"
               type="password"
+              placeholder="Password"
               className="form-control"
               autoComplete="current-password"
               value={password}
@@ -116,18 +124,20 @@ export default function Login() {
             type="submit"
             className="btn btn-primary w-100"
           >
-            {isLoading ? "Logging in..." : "Log in"}
+            {isLoading ? "Logging in..." : "LOG IN"}
           </button>
         </fieldset>
       </form>
 
-      <p className="mt-3 mb-0">
-        No account yet? <Link to="/register">Create one</Link>
-      </p>
+      <div className="login-links">
+        <p>
+          No account yet? <Link to="/register">Create one</Link>
+        </p>
 
-      <Link to="/" className="d-inline-block mt-3">
-        Back to home
-      </Link>
-    </main>
+        <Link to="/" className="login-back">
+          Back to home
+        </Link>
+      </div>
+    </section>
   );
 }
