@@ -196,7 +196,7 @@ public class OrdersController : ControllerBase
             return NotFound(CreateNotFoundResponse(id));
         }
 
-        if (order.SellerId != userId && order.BuyerId != userId)
+        if (order.SellerId != userId)
         {
             return Forbid();
         }
@@ -238,7 +238,7 @@ public class OrdersController : ControllerBase
             return NotFound(CreateNotFoundResponse(id));
         }
 
-        if (order.BuyerId != userId && order.SellerId != userId)
+        if (order.BuyerId != userId)
         {
             return Forbid();
         }
