@@ -45,6 +45,22 @@ Content-Type: application/json
   "localPickupAvailable": true
 }
 
+### Change price of a reserved or sold listing (expect 409 Conflict)
+# Requires login as the listing owner. Replace 1 with a listing that has an order.
+# While a listing is Reserved or Sold, price and localPickupAvailable cannot be changed.
+# Title, description, category and creatorName can still be updated.
+PUT {{HostAddress}}/api/artworklistings/1
+Content-Type: application/json
+
+{
+  "title": "Evening in Vilnius",
+  "description": "An updated original cityscape painting.",
+  "price": 999.00,
+  "creatorName": "Geronimo",
+  "category": "Painting",
+  "localPickupAvailable": true
+}
+
 ### Delete an artwork listing
 # Requires login as the listing owner. Ownerless listings return 403.
 # Also deletes the listing image file when one is stored.
