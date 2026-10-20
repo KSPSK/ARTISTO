@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import "./ArtworkListingForm.css";
 
 const initialForm = {
   title: "",
@@ -334,52 +335,59 @@ export default function ArtworkListingForm() {
 
   if (isDeleted) {
     return (
-      <div className="py-4">
+      <main className="listing-gate">
         <div className="alert alert-success" role="status">
           Listing deleted successfully
         </div>
-
-        <a href="/artworklistings" className="btn btn-primary">
-          Return to listings
-        </a>
-      </div>
+        <div className="listing-gate-actions">
+          <a href="/artworklistings" className="btn btn-primary">
+            Return to listings
+          </a>
+        </div>
+      </main>
     );
   }
 
   if (authLoading) {
-    return <p className="py-4" role="status">Checking your session...</p>;
+    return <p className="listing-gate" role="status">Checking your session...</p>;
   }
 
   if (!user) {
     return (
-      <div className="py-4">
-        <p>You must be logged in to create or edit a listing.</p>
-        <Link to="/login" className="btn btn-primary">Log in</Link>
-      </div>
+      <main className="listing-gate">
+        <h1>{isEditing ? "Edit listing" : "Create listing"}</h1>
+        <p className="listing-gate-lead">
+          You must be logged in to create or edit a listing.
+        </p>
+        <div className="listing-gate-actions">
+          <Link to="/login" className="btn btn-primary">Log in</Link>
+        </div>
+      </main>
     );
   }
 
   if (isEditing && loadError) {
     return (
-      <div className="py-4">
+      <main className="listing-gate">
         <div className="alert alert-danger" role="alert">
           {loadError}
         </div>
-
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => setRetryCount((previous) => previous + 1)}
-        >
-          Try again
-        </button>
-      </div>
+        <div className="listing-gate-actions">
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setRetryCount((previous) => previous + 1)}
+          >
+            Try again
+          </button>
+        </div>
+      </main>
     );
   }
 
   if (isEditing && (isLoading || loadedId !== id)) {
     return (
-      <p className="py-4" role="status">
+      <p className="listing-gate" role="status">
         Listing is loading...
       </p>
     );
@@ -387,20 +395,25 @@ export default function ArtworkListingForm() {
 
   if (isEditing && (ownerId == null || String(ownerId) !== String(user.id))) {
     return (
-      <div className="py-4">
-        <p>You can only edit your own listings.</p>
-        <Link to={`/listings/${id}`}>Back to listing</Link>
-      </div>
+      <main className="listing-gate">
+        <h1>Edit listing</h1>
+        <p className="listing-gate-lead">You can only edit your own listings.</p>
+        <div className="listing-gate-actions">
+          <Link to={`/listings/${id}`} className="btn btn-primary">
+            Back to listing
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto py-4" style={{ maxWidth: 640 }}>
+    <main className="listing-form">
       <h1>
-        {isEditing ? "Edit Listing" : "Create Listing"}
+        {isEditing ? "Edit listing" : "Create listing"}
       </h1>
 
-      <p>
+      <p className="listing-form-lead">
         {isEditing
           ? "Update the artwork information and save."
           : "Enter details about the artwork you want to sell."}
@@ -554,26 +567,28 @@ export default function ArtworkListingForm() {
             )}
           </div>
 
-          <button type="submit" className="btn btn-primary">
-            {isUploading
-              ? "Uploading image..."
-              : isSaving
-                ? "Saving..."
-                : persistedId
-                  ? "Save changes"
-                  : "Create Listing"}
-          </button>
-          {isEditing && (
-            <button
-              type="button"
-              className="btn btn-outline-danger ms-2"
-              onClick={handleDelete}
-            >
-              {isDeleting ? "Deleting..." : "Delete Listing"}
+          <div className="listing-form-actions">
+            <button type="submit" className="btn btn-primary">
+              {isUploading
+                ? "Uploading image..."
+                : isSaving
+                  ? "Saving..."
+                  : persistedId
+                    ? "Save changes"
+                    : "Create Listing"}
             </button>
-          )}
+            {isEditing && (
+              <button
+                type="button"
+                className="btn btn-outline-danger"
+                onClick={handleDelete}
+              >
+                {isDeleting ? "Deleting..." : "Delete Listing"}
+              </button>
+            )}
+          </div>
         </fieldset>
       </form>
-    </div>
+    </main>
   );
 }
