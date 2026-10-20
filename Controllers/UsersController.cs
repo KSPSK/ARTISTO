@@ -1,11 +1,9 @@
-using ARTISTO.Data;
 using ARTISTO.Models;
+using ARTISTO.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace ARTISTO.Controllers;
@@ -14,15 +12,11 @@ namespace ARTISTO.Controllers;
 [Route("api/[controller]")]
 public class UsersController : ControllerBase
 {
-    private readonly ArtistoDbContext _context;
-    private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly IUserService _userService;
 
-    public UsersController(
-        ArtistoDbContext context,
-        IPasswordHasher<User> passwordHasher)
+    public UsersController(IUserService userService)
     {
-        _context = context;
-        _passwordHasher = passwordHasher;
+        _userService = userService;
     }
 
     [HttpPost("register")]
@@ -30,32 +24,19 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<UserResponse>> Register(UserRegisterRequest request)
     {
-        var normalizedUsername = request.Username.Trim().ToLowerInvariant();
-
-        var usernameExists = await _context.Users.AnyAsync(u => u.Username.ToLower() == normalizedUsername);
-        if (usernameExists)
+        var result = await _userService.RegisterAsync(request);
+        if (!result.IsSuccess)
         {
-            return BadRequest(new ApiErrorResponse($"Username '{request.Username}' is already taken."));
+            return BadRequest(new ApiErrorResponse(result.ErrorMessage!));
         }
 
-        var user = new User
-        {
-            Username = request.Username.Trim(),
-            DisplayName = request.DisplayName.Trim(),
-            Description = request.Description.Trim(),
-            City = request.City.Trim()
-        };
-
-        user.Password = _passwordHasher.HashPassword(user, request.Password);
-
-        _context.Users.Add(user);
-        await _context.SaveChangesAsync();
+        var user = result.Value!;
         await SignInUser(user);
 
         return CreatedAtAction(
             nameof(GetById),
             new { id = user.Id },
-            ToResponse(user));
+            UserService.ToResponse(user));
     }
 
     [HttpPost("login")]
@@ -63,29 +44,16 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserResponse>> Login(UserLoginRequest request)
     {
-        var normalizedUsername = request.Username.Trim().ToLowerInvariant();
-
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == normalizedUsername);
-        if (user is null)
+        var result = await _userService.AuthenticateAsync(request);
+        if (!result.IsSuccess)
         {
-            return Unauthorized(new ApiErrorResponse("Invalid username or password."));
+            return Unauthorized(new ApiErrorResponse(result.ErrorMessage!));
         }
 
-        var result = _passwordHasher.VerifyHashedPassword(user, user.Password, request.Password);
-        if (result == PasswordVerificationResult.Failed)
-        {
-            return Unauthorized(new ApiErrorResponse("Invalid username or password."));
-        }
-
-        if (result == PasswordVerificationResult.SuccessRehashNeeded)
-        {
-            user.Password = _passwordHasher.HashPassword(user, request.Password);
-            await _context.SaveChangesAsync();
-        }
-
+        var user = result.Value!;
         await SignInUser(user);
 
-        return Ok(ToResponse(user));
+        return Ok(UserService.ToResponse(user));
     }
 
     [Authorize]
@@ -94,20 +62,19 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserResponse>> GetCurrentUser()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!TryGetAuthenticatedUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _userService.GetByIdAsync(userId);
         if (user is null)
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Unauthorized(new ApiErrorResponse("The authenticated user no longer exists."));
         }
 
-        return Ok(ToResponse(user));
+        return Ok(user);
     }
 
     [HttpPost("logout")]
@@ -121,12 +88,8 @@ public class UsersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetAll()
     {
-        var users = await _context.Users
-            .AsNoTracking()
-            .OrderBy(u => u.DisplayName)
-            .ToListAsync();
-
-        return Ok(users.Select(ToResponse));
+        var users = await _userService.GetAllAsync();
+        return Ok(users);
     }
 
     [HttpGet("{id:int}")]
@@ -134,12 +97,13 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> GetById(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _userService.GetByIdAsync(id);
         if (user is null)
         {
-            return NotFound(CreateNotFoundResponse(id));
+            return NotFound(new ApiErrorResponse($"User {id} was not found."));
         }
-        return Ok(ToResponse(user));
+
+        return Ok(user);
     }
 
     [HttpGet("{id:int}/artworklistings")]
@@ -147,18 +111,13 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<ArtworkListing>>> GetListings(int id)
     {
-        var exists = await _context.Users.AnyAsync(u => u.Id == id);
-        if (!exists)
+        var result = await _userService.GetListingsAsync(id);
+        if (!result.IsSuccess)
         {
-            return NotFound(CreateNotFoundResponse(id));
+            return NotFound(new ApiErrorResponse(result.ErrorMessage!));
         }
 
-        var listings = await _context.ArtworkListings
-            .AsNoTracking()
-            .Where(a => a.UserId == id)
-            .ToListAsync();
-
-        return Ok(listings);
+        return Ok(result.Value);
     }
 
     [Authorize]
@@ -169,40 +128,19 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> Update(int id, UserUpdateRequest request)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!TryGetAuthenticatedUserId(out var currentUserId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        if (userId != id)
+        var result = await _userService.UpdateAsync(id, request, currentUserId);
+
+        return result.Status switch
         {
-            return Forbid();
-        }
-
-        var existing = await _context.Users.FindAsync(id);
-        if (existing is null)
-        {
-            return NotFound(CreateNotFoundResponse(id));
-        }
-
-        existing.DisplayName = request.DisplayName.Trim();
-        existing.Description = request.Description.Trim();
-        existing.City = request.City.Trim();
-        await _context.SaveChangesAsync();
-
-        return Ok(ToResponse(existing));
-    }
-
-    private static UserResponse ToResponse(User user)
-    {
-        return new UserResponse
-        {
-            Id = user.Id,
-            Username = user.Username,
-            DisplayName = user.DisplayName,
-            Description = user.Description,
-            City = user.City
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
 
@@ -225,8 +163,8 @@ public class UsersController : ControllerBase
             new AuthenticationProperties { IsPersistent = false });
     }
 
-    private static ApiErrorResponse CreateNotFoundResponse(int id)
+    private bool TryGetAuthenticatedUserId(out int userId)
     {
-        return new ApiErrorResponse($"User {id} was not found.");
+        return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
     }
 }
