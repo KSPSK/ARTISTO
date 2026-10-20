@@ -1,0 +1,60 @@
+.listing-gate {
+  max-width: 500px;
+  margin: 64px auto;
+  padding: 32px;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+body:has(.listing-gate) {
+  background-color: #f9f9f9;
+}
+
+.listing-gate h1 {
+  font-family: Georgia, serif;
+  font-size: 50px;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.listing-gate .listing-gate-lead {
+  margin-bottom: 24px;
+  color: #777777;
+}
+
+.listing-gate .listing-gate-actions .btn {
+  min-height: 48px;
+  padding: 8px 20px;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.listing-gate .btn-primary {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.listing-gate .btn-primary:hover,
+.listing-gate .btn-primary:active,
+.listing-gate .btn-primary:focus {
+  background-color: #252e24;
+  border-color: #252e24;
+}
+
+.listing-gate .btn:focus,
+.listing-gate .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+@media (max-width: 576px) {
+  .listing-gate {
+    margin: 24px auto;
+    padding: 24px;
+  }
+
+  .listing-gate h1 {
+    font-size: 40px;
+  }
+}

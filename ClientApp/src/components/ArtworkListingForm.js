@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import "./ArtworkListingForm.css";
 
 const initialForm = {
   title: "",
@@ -347,15 +348,20 @@ export default function ArtworkListingForm() {
   }
 
   if (authLoading) {
-    return <p className="py-4" role="status">Checking your session...</p>;
+    return <p className="listing-gate" role="status">Checking your session...</p>;
   }
 
   if (!user) {
     return (
-      <div className="py-4">
-        <p>You must be logged in to create or edit a listing.</p>
-        <Link to="/login" className="btn btn-primary">Log in</Link>
-      </div>
+      <main className="listing-gate">
+        <h1>{isEditing ? "Edit listing" : "Create listing"}</h1>
+        <p className="listing-gate-lead">
+          You must be logged in to create or edit a listing.
+        </p>
+        <div className="listing-gate-actions">
+          <Link to="/login" className="btn btn-primary">Log in</Link>
+        </div>
+      </main>
     );
   }
 
