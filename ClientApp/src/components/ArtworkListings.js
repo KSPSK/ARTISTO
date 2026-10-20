@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
+import "./ArtworkListings.css";
 
 export function ArtworkListings() {
   const [searchParams] = useSearchParams();
@@ -134,7 +135,7 @@ export function ArtworkListings() {
   }
 
   return (
-    <div>
+    <div className="artwork-listings">
       <h1>Artwork Listings</h1>
 
       {message && (
@@ -147,7 +148,7 @@ export function ArtworkListings() {
         <label className="form-label" htmlFor="listing-search">
           Search
         </label>
-        <div className="d-grid gap-2 d-sm-flex">
+        <div className="artwork-search-row">
           <input
             id="listing-search"
             className="form-control"

@@ -1,7 +1,11 @@
-﻿a.navbar-brand {
-  white-space: normal;
-  text-align: center;
-  word-break: break-all;
+.navbar-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+.navbar .nav-link {
+  color: #000;
 }
 
 html {

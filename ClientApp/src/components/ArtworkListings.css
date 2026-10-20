@@ -1,0 +1,132 @@
+.artwork-listings h1 {
+  font-family: Georgia, serif;
+  font-size: 50px;
+  font-weight: 400;
+  margin-bottom: 24px;
+}
+
+.artwork-listings .artwork-search {
+  font-size: 20px;
+}
+
+.artwork-listings .artwork-search .form-label {
+  margin-bottom: 0;
+}
+
+.artwork-listings .artwork-search-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.artwork-listings .artwork-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #000000;
+  border-radius: 0;
+}
+
+.artwork-listings .artwork-search button {
+  padding: 8px 20px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.artwork-listings .artwork-search .btn-primary {
+  background: #000000;
+  border-color: #000000;
+}
+
+.artwork-listings .artwork-search .btn-primary:hover {
+  background: #222222;
+  border-color: #222222;
+}
+
+.artwork-listings .artwork-search .btn-outline-secondary {
+  color: #000000;
+  border-color: #000000;
+}
+
+.artwork-listings .artwork-search .btn-outline-secondary:hover {
+  color: #FFFFFF;
+  background: #000000;
+}
+
+@media (max-width: 575px) {
+  .artwork-listings .artwork-search-row {
+    flex-wrap: wrap;
+  }
+
+  .artwork-listings .artwork-search input {
+    flex-basis: 100%;
+  }
+}
+
+/* Cards style */
+
+.artwork-listings .artwork-card {
+  padding: 12px;
+  background: #FFFFFF;
+  border: 1px solid #DDDDDD;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.artwork-listings .artwork-thumb {
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+.artwork-listings .artwork-thumb-empty {
+  background: #F1F1F1;
+  border: 1px solid #DDDDDD;
+  color: #000000;
+  font-family: Georgia, serif;
+}
+
+.artwork-listings .artwork-title {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.artwork-listings .artwork-creator,
+.artwork-listings .artwork-creator a {
+  color: #777777;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.artwork-listings .artwork-creator a:hover {
+  text-decoration: underline;
+}
+
+.artwork-listings .artwork-price {
+  color: #000000;
+  font-weight: 400;
+}
+
+.artwork-listings .artwork-category {
+  font-size: 11px;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.artwork-listings .artwork-open {
+  background: #000000;
+  border-color: #000000;
+  border-radius: 2px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.artwork-listings .artwork-open:hover {
+  background: #222222;
+  border-color: #222222;
+}
