@@ -1,0 +1,93 @@
+.register-page {
+  max-width: 500px;
+  margin: 64px auto;
+  padding: 32px;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+body:has(.register-page) {
+  background-color: #f9f9f9;
+}
+
+.register-page h1 {
+  font-family: Georgia, serif;
+  font-size: 50px;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.register-page .register-lead {
+  margin-bottom: 24px;
+  color: #777777;
+}
+
+.register-page .form-label {
+  margin-bottom: 0;
+  font-size: 16px;
+}
+
+.register-page .form-control {
+  min-height: 40px;
+  padding: 8px 0;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid #aaa;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 20px;
+}
+
+.register-page textarea.form-control {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.register-page .form-control:focus {
+  background-color: transparent;
+  border-color: #000000;
+  box-shadow: none;
+  outline: none;
+}
+
+.register-page .btn-primary {
+  min-height: 48px;
+  background-color: #000000;
+  border-color: #000000;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.register-page .btn-primary:hover,
+.register-page .btn-primary:active,
+.register-page .btn-primary:focus {
+  background-color: #252e24;
+  border-color: #252e24;
+}
+
+.register-page .btn:focus,
+.register-page .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+.register-page a {
+  color: #757575;
+}
+
+.register-page .register-login {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+@media (max-width: 576px) {
+  .register-page {
+    margin: 24px auto;
+    padding: 24px;
+  }
+
+  .register-page h1 {
+    font-size: 40px;
+  }
+}

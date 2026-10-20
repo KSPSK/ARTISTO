@@ -1,0 +1,193 @@
+.listing-gate {
+  max-width: 500px;
+  margin: 64px auto;
+  padding: 32px;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+body:has(.listing-gate) {
+  background-color: #f9f9f9;
+}
+
+.listing-gate h1 {
+  font-family: Georgia, serif;
+  font-size: 50px;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.listing-gate .listing-gate-lead {
+  margin-bottom: 24px;
+  color: #777777;
+}
+
+.listing-gate .listing-gate-actions .btn {
+  min-height: 48px;
+  padding: 8px 20px;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.listing-gate .btn-primary {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.listing-gate .btn-primary:hover,
+.listing-gate .btn-primary:active,
+.listing-gate .btn-primary:focus {
+  background-color: #252e24;
+  border-color: #252e24;
+}
+
+.listing-gate .btn:focus,
+.listing-gate .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+@media (max-width: 576px) {
+  .listing-gate {
+    margin: 24px auto;
+    padding: 24px;
+  }
+
+  .listing-gate h1 {
+    font-size: 40px;
+  }
+}
+
+.listing-form {
+  max-width: 640px;
+  margin: 16px auto 48px;
+}
+
+.listing-form h1 {
+  font-family: Georgia, serif;
+  font-size: 50px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.listing-form .listing-form-lead {
+  margin-bottom: 24px;
+  color: #777777;
+}
+
+.listing-form .form-label {
+  margin-bottom: 0;
+  font-size: 16px;
+}
+
+.listing-form .form-control,
+.listing-form .form-select {
+  min-height: 40px;
+  padding: 8px 0;
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid #aaa;
+  border-radius: 0;
+  box-shadow: none;
+  font-size: 18px;
+}
+
+.listing-form textarea.form-control {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.listing-form input[type="file"].form-control {
+  padding: 8px;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+}
+
+.listing-form .form-control:focus,
+.listing-form .form-select:focus {
+  background-color: transparent;
+  border-color: #000000;
+  box-shadow: none;
+  outline: none;
+}
+
+.listing-form input[type="file"].form-control:focus {
+  background-color: #ffffff;
+}
+
+.listing-form .form-text {
+  color: #777777;
+}
+
+.listing-form .form-check-input {
+  border-color: #000000;
+}
+
+.listing-form .form-check-input:checked {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.listing-form .form-check-input:focus {
+  border-color: #000000;
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+.listing-form .listing-image-preview {
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+}
+
+.listing-form .listing-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.listing-form .btn {
+  min-height: 48px;
+  padding: 8px 20px;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.listing-form .btn-primary {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.listing-form .btn-primary:hover,
+.listing-form .btn-primary:active,
+.listing-form .btn-primary:focus {
+  background-color: #252e24;
+  border-color: #252e24;
+}
+
+.listing-form .btn-outline-danger {
+  color: #000000;
+  background-color: transparent;
+  border-color: #000000;
+}
+
+.listing-form .btn-outline-danger:hover,
+.listing-form .btn-outline-danger:active,
+.listing-form .btn-outline-danger:focus {
+  color: #ffffff;
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.listing-form .btn:focus,
+.listing-form .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+@media (max-width: 576px) {
+  .listing-form h1 {
+    font-size: 40px;
+  }
+}
