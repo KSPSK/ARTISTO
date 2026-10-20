@@ -120,7 +120,7 @@ export default function ArtworkListingDetails() {
     return null;
   }
 
-  const formattedPrice = new Intl.NumberFormat("en-IE", {
+  const formattedPrice = new Intl.NumberFormat("lt-LT", {
     style: "currency",
     currency: "EUR",
   }).format(listing.price);
