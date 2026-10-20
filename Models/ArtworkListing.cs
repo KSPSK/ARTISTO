@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
 namespace ARTISTO.Models;
@@ -22,7 +23,7 @@ public enum ArtworkListingStatus
     Sold
 }
 
-public class ArtworkListing
+public class ArtworkListing : IComparable<ArtworkListing>
 {
     public int Id { get; set; }
 
@@ -51,4 +52,20 @@ public class ArtworkListing
 
     [JsonIgnore]
     public User? User { get; set; }
+
+    [NotMapped]
+    public bool IsAvailable => Status == ArtworkListingStatus.Available;
+
+    [NotMapped]
+    public bool HasImage => !string.IsNullOrWhiteSpace(ImageUrl);
+
+    public int CompareTo(ArtworkListing? other)
+    {
+        if (other is null)
+        {
+            return 1;
+        }
+
+        return Price.CompareTo(other.Price);
+    }
 }

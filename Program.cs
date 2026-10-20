@@ -42,6 +42,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IArtworkImageService, ArtworkImageService>();
 
+// Register Repositories and Services (SOLID: Dependency Injection)
+builder.Services.AddScoped<IArtworkListingRepository, ArtworkListingRepository>();
+builder.Services.AddScoped<IArtworkListingService, ArtworkListingService>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
