@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import "./CreatorProfileForm.css";
 
 export default function CreatorProfileForm() {
   const { id } = useParams();
@@ -126,15 +127,20 @@ export default function CreatorProfileForm() {
   }
 
   if (authLoading) {
-    return <p className="py-4" role="status">Checking your session...</p>;
+    return <p className="profile-gate" role="status">Checking your session...</p>;
   }
 
   if (!currentUser) {
     return (
-      <div className="py-4">
-        <p>You must be logged in to edit a profile.</p>
-        <Link to="/login" className="btn btn-primary">Log in</Link>
-      </div>
+      <main className="profile-gate">
+        <h1>Edit profile</h1>
+        <p className="profile-gate-lead">
+          You must be logged in to edit a profile.
+        </p>
+        <div className="profile-gate-actions">
+          <Link to="/login" className="btn btn-primary">Log in</Link>
+        </div>
+      </main>
     );
   }
 
