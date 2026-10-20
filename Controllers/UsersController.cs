@@ -1,4 +1,5 @@
 using ARTISTO.Data;
+using ARTISTO.Extensions;
 using ARTISTO.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -94,8 +95,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserResponse>> GetCurrentUser()
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -169,8 +169,7 @@ public class UsersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponse>> Update(int id, UserUpdateRequest request)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdValue, out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
