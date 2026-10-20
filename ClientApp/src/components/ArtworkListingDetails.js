@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
+import "./ArtworkListingDetails.css";
 
 const categoryLabels = {
   Painting: "Painting",
@@ -73,7 +74,7 @@ export default function ArtworkListingDetails() {
 
   if (loading) {
     return (
-      <div className="listing-details-status" role="status">
+      <div className="listing-details listing-details-status" role="status">
         Loading listing...
       </div>
     );
@@ -81,7 +82,7 @@ export default function ArtworkListingDetails() {
 
   if (notFound) {
     return (
-      <div className="listing-details-status">
+      <div className="listing-details listing-details-status">
         <h1>Listing not found</h1>
         <p>This listing does not exist or has been removed.</p>
 
@@ -94,7 +95,7 @@ export default function ArtworkListingDetails() {
 
   if (error) {
     return (
-      <div className="listing-details-status">
+      <div className="listing-details listing-details-status">
         <h1>Something went wrong</h1>
         <p role="alert">{error}</p>
 

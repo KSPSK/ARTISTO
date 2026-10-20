@@ -1,0 +1,107 @@
+.listing-details h1,
+.listing-details h2,
+.listing-details .listing-details-content h1,
+.listing-details .listing-details-content h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+
+.listing-details h1,
+.listing-details .listing-details-content h1 {
+  font-size: 50px;
+  margin-bottom: 12px;
+  overflow-wrap: anywhere;
+}
+
+.listing-details h2,
+.listing-details .listing-details-content h2 {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.listing-details .listing-details-price {
+  margin-bottom: 24px;
+  color: #000000;
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.listing-details .listing-details-info > div {
+  border-bottom-color: #dddddd;
+}
+
+.listing-details .listing-details-info dt {
+  color: #777777;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.listing-details a:not(.btn) {
+  color: #777777;
+  text-decoration: none;
+}
+
+.listing-details a:not(.btn):hover {
+  color: #777777;
+  text-decoration: underline;
+}
+
+.listing-details .listing-details-image {
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  background: #f1f1f1;
+  color: #000000;
+  font-family: Georgia, serif;
+}
+
+.listing-details .listing-details-photo {
+  border-radius: 4px;
+}
+
+.listing-details .btn-primary {
+  padding: 8px 20px;
+  background: #000000;
+  border-color: #000000;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.listing-details .btn-primary:hover,
+.listing-details .btn-primary:active,
+.listing-details .btn-primary:focus {
+  background: #222222;
+  border-color: #222222;
+}
+
+.listing-details .btn-secondary {
+  padding: 8px 20px;
+  color: #000000;
+  background: transparent;
+  border-color: #000000;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.listing-details .btn-secondary:hover,
+.listing-details .btn-secondary:active,
+.listing-details .btn-secondary:focus {
+  color: #ffffff;
+  background: #000000;
+  border-color: #000000;
+}
+
+.listing-details .btn:focus,
+.listing-details .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+@media (max-width: 576px) {
+  .listing-details h1,
+  .listing-details .listing-details-content h1 {
+    font-size: 40px;
+  }
+}
