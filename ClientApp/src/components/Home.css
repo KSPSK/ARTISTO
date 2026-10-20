@@ -1,0 +1,141 @@
+.home-page h1,
+.home-page h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+
+.home-page h1 {
+  font-size: 50px;
+  margin-bottom: 16px;
+}
+
+.home-page h2 {
+  font-size: 32px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.home-page .home-intro {
+  margin-bottom: 24px;
+  font-size: 18px;
+}
+
+.home-page .home-actions {
+  margin-bottom: 32px;
+}
+
+.home-page .home-actions .btn {
+  padding: 8px 20px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.home-page .btn-primary {
+  background: #000000;
+  border-color: #000000;
+}
+
+.home-page .btn-primary:hover,
+.home-page .btn-primary:active,
+.home-page .btn-primary:focus {
+  background: #222222;
+  border-color: #222222;
+}
+
+.home-page .btn-outline-primary {
+  color: #000000;
+  border-color: #000000;
+  background: transparent;
+}
+
+.home-page .btn-outline-primary:hover,
+.home-page .btn-outline-primary:active,
+.home-page .btn-outline-primary:focus {
+  color: #ffffff;
+  background: #000000;
+  border-color: #000000;
+}
+
+.home-page .btn:focus,
+.home-page .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+.home-page a:not(.btn) {
+  color: #777777;
+  text-decoration: none;
+}
+
+.home-page a:not(.btn):hover {
+  text-decoration: underline;
+}
+
+.home-page .artwork-card {
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.home-page .artwork-thumb {
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+.home-page .artwork-thumb-empty {
+  background: #f1f1f1;
+  border: 1px solid #dddddd;
+  color: #000000;
+  font-family: Georgia, serif;
+}
+
+.home-page .artwork-title {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.home-page .artwork-creator,
+.home-page .artwork-creator a {
+  color: #777777;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.home-page .artwork-creator a:hover {
+  text-decoration: underline;
+}
+
+.home-page .artwork-price {
+  color: #000000;
+  font-weight: 400;
+}
+
+.home-page .artwork-category {
+  font-size: 11px;
+  text-transform: uppercase;
+  border-radius: 2px;
+}
+
+.home-page .artwork-open {
+  background: #000000;
+  border-color: #000000;
+  border-radius: 2px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: normal;
+  padding: 6px 12px;
+}
+
+.home-page .artwork-open:hover {
+  background: #222222;
+  border-color: #222222;
+}
+
+.home-page .home-more {
+  margin-top: 16px;
+}

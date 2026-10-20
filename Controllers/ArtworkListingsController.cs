@@ -1,10 +1,8 @@
-using ARTISTO.Data;
 using ARTISTO.Extensions;
 using ARTISTO.Models;
 using ARTISTO.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ARTISTO.Controllers;
 
@@ -12,28 +10,25 @@ namespace ARTISTO.Controllers;
 [Route("api/[controller]")]
 public class ArtworkListingsController : ControllerBase
 {
-    private readonly ArtistoDbContext _context;
-    private readonly IArtworkImageService _images;
+    private readonly IArtworkListingService _listingService;
 
-    public ArtworkListingsController(ArtistoDbContext context, IArtworkImageService images)
+    public ArtworkListingsController(IArtworkListingService listingService)
     {
-        _context = context;
-        _images = images;
+        _listingService = listingService;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ArtworkListing>>> GetAll([FromQuery] string? q)
+    public async Task<ActionResult<IEnumerable<ArtworkListing>>> GetAll(
+        [FromQuery] string? q = null,
+        [FromQuery] ArtworkCategory? category = null,
+        [FromQuery] decimal? maxPrice = null)
     {
-        var query = _context.ArtworkListings.AsQueryable();
-        if (!string.IsNullOrWhiteSpace(q))
-        {
-            var search = q.Trim();
-            query = query.Where(item =>
-                (item.Title != null && EF.Functions.ILike(item.Title, $"%{search}%")) ||
-                (item.CreatorName != null && EF.Functions.ILike(item.CreatorName, $"%{search}%")));
-        }
-        var results = await query.ToListAsync();
-        return Ok(results);
+        var listings = await _listingService.GetAllAsync(
+            search: q,
+            category: category,
+            maxPrice: maxPrice);
+
+        return Ok(listings);
     }
 
     [HttpGet("{id:int}")]
@@ -41,11 +36,12 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ArtworkListing>> GetById(int id)
     {
-        var listing = await _context.ArtworkListings.FindAsync(id);
+        var listing = await _listingService.GetByIdAsync(id);
         if (listing is null)
         {
-            return NotFound(CreateNotFoundResponse(id));
+            return NotFound(new ApiErrorResponse($"Artwork listing {id} was not found."));
         }
+
         return Ok(listing);
     }
 
@@ -55,30 +51,21 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ArtworkListing>> Create(ArtworkListingWriteRequest request)
     {
-        if (!User.TryGetUserId(out var userId) ||
-            !await _context.Users.AnyAsync(u => u.Id == userId))
+        if (!User.TryGetUserId(out var userId))
         {
-            return Unauthorized(new ApiErrorResponse(
-                "A valid user account is required to create a listing."));
+            return Unauthorized(new ApiErrorResponse("A valid user account is required to create a listing."));
         }
 
-        var listing = new ArtworkListing
+        var result = await _listingService.CreateAsync(request, userId);
+        if (!result.IsSuccess)
         {
-            Title = request.Title,
-            Description = request.Description,
-            Price = request.Price,
-            CreatorName = request.CreatorName,
-            Category = request.Category,
-            LocalPickupAvailable = request.LocalPickupAvailable,
-            UserId = userId
-        };
+            return Unauthorized(new ApiErrorResponse(result.ErrorMessage!));
+        }
 
-        _context.ArtworkListings.Add(listing);
-        await _context.SaveChangesAsync();
         return CreatedAtAction(
             nameof(GetById),
-            new { id = listing.Id },
-            listing);
+            new { id = result.Value!.Id },
+            result.Value);
     }
 
     [Authorize]
@@ -88,52 +75,23 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ArtworkListing>> Update(
-        int id,
-        ArtworkListingWriteRequest request)
+    public async Task<ActionResult<ArtworkListing>> Update(int id, ArtworkListingWriteRequest request)
     {
         if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var existing = await _context.ArtworkListings.FindAsync(id);
-        if (existing is null)
-        {
-            return NotFound(CreateNotFoundResponse(id));
-        }
+        var result = await _listingService.UpdateAsync(id, request, userId);
 
-        if (existing.UserId is null || existing.UserId != userId)
+        return result.Status switch
         {
-            return Forbid();
-        }
-
-        if (existing.Status != ArtworkListingStatus.Available &&
-            (request.Price != existing.Price ||
-             request.LocalPickupAvailable != existing.LocalPickupAvailable))
-        {
-            return Conflict(new ApiErrorResponse(
-                $"Price and local pickup cannot be changed while the listing is {existing.Status.ToString().ToLowerInvariant()}."));
-        }
-
-        existing.Title = request.Title;
-        existing.Description = request.Description;
-        existing.Price = request.Price;
-        existing.CreatorName = request.CreatorName;
-        existing.Category = request.Category;
-        existing.LocalPickupAvailable = request.LocalPickupAvailable;
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict(new ApiErrorResponse(
-                "The listing was reserved or changed while you were editing it. Reload it and try again."));
-        }
-
-        return Ok(existing);
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [Authorize]
@@ -150,28 +108,16 @@ public class ArtworkListingsController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var existing = await _context.ArtworkListings.FindAsync(id);
-        if (existing is null)
-        {
-            return NotFound(CreateNotFoundResponse(id));
-        }
+        var result = await _listingService.DeleteAsync(id, userId);
 
-        if (existing.UserId is null || existing.UserId != userId)
+        return result.Status switch
         {
-            return Forbid();
-        }
-
-        var hasOrders = await _context.Orders.AnyAsync(o => o.ArtworkListingId == id);
-        if (hasOrders)
-        {
-            return BadRequest(new ApiErrorResponse("Cannot delete an artwork listing that has existing orders."));
-        }
-
-        var imageUrl = existing.ImageUrl;
-        _context.ArtworkListings.Remove(existing);
-        await _context.SaveChangesAsync();
-        _images.Delete(imageUrl);
-        return NoContent();
+            ServiceStatus.Success => NoContent(),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [Authorize]
@@ -188,48 +134,16 @@ public class ArtworkListingsController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var existing = await _context.ArtworkListings.FindAsync(id);
-        if (existing is null)
-        {
-            return NotFound(CreateNotFoundResponse(id));
-        }
+        var result = await _listingService.UploadImageAsync(id, image, userId);
 
-        if (existing.UserId is null || existing.UserId != userId)
+        return result.Status switch
         {
-            return Forbid();
-        }
-
-        if (image is null)
-        {
-            return BadRequest(new ApiErrorResponse("An image file is required."));
-        }
-
-        string imageUrl;
-        try
-        {
-            imageUrl = await _images.SaveAsync(image);
-        }
-        catch (ArtworkImageValidationException exception)
-        {
-            return BadRequest(new ApiErrorResponse(exception.Message));
-        }
-
-        var previousImageUrl = existing.ImageUrl;
-        existing.ImageUrl = imageUrl;
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch
-        {
-            existing.ImageUrl = previousImageUrl;
-            _images.Delete(imageUrl);
-            throw;
-        }
-
-        _images.Delete(previousImageUrl);
-
-        return Ok(existing);
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [Authorize]
@@ -245,26 +159,14 @@ public class ArtworkListingsController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var existing = await _context.ArtworkListings.FindAsync(id);
-        if (existing is null)
+        var result = await _listingService.DeleteImageAsync(id, userId);
+
+        return result.Status switch
         {
-            return NotFound(CreateNotFoundResponse(id));
-        }
-
-        if (existing.UserId is null || existing.UserId != userId)
-        {
-            return Forbid();
-        }
-
-        var imageUrl = existing.ImageUrl;
-        existing.ImageUrl = null;
-        await _context.SaveChangesAsync();
-        _images.Delete(imageUrl);
-        return NoContent();
-    }
-
-    private static ApiErrorResponse CreateNotFoundResponse(int id)
-    {
-        return new ApiErrorResponse($"Artwork listing {id} was not found.");
+            ServiceStatus.Success => NoContent(),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 }

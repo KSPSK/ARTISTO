@@ -1,9 +1,8 @@
-using ARTISTO.Data;
 using ARTISTO.Extensions;
 using ARTISTO.Models;
+using ARTISTO.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace ARTISTO.Controllers;
 
@@ -12,11 +11,11 @@ namespace ARTISTO.Controllers;
 [Route("api/[controller]")]
 public class OrdersController : ControllerBase
 {
-    private readonly ArtistoDbContext _context;
+    private readonly IOrderService _orderService;
 
-    public OrdersController(ArtistoDbContext context)
+    public OrdersController(IOrderService orderService)
     {
-        _context = context;
+        _orderService = orderService;
     }
 
     [HttpGet]
@@ -27,46 +26,17 @@ public class OrdersController : ControllerBase
     {
         if (!User.TryGetUserId(out var userId))
         {
-            return Unauthorized(new ApiErrorResponse(
-                "The authentication session is invalid."));
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        role = role?.Trim();
+        var result = await _orderService.GetMyOrdersAsync(userId, role);
 
-        if (!string.IsNullOrEmpty(role)
-            && !string.Equals(role, "buyer", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(role, "seller", StringComparison.OrdinalIgnoreCase))
+        return result.Status switch
         {
-            return BadRequest(new ApiErrorResponse(
-                "Role must be either 'buyer' or 'seller'."));
-        }
-
-        var query = _context.Orders
-            .AsNoTracking()
-            .Include(o => o.ArtworkListing)
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .AsQueryable();
-
-        if (string.Equals(role, "buyer", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(o => o.BuyerId == userId);
-        }
-        else if (string.Equals(role, "seller", StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(o => o.SellerId == userId);
-        }
-        else
-        {
-            query = query.Where(o => o.BuyerId == userId || o.SellerId == userId);
-        }
-
-        var orders = await query
-            .OrderByDescending(o => o.CreatedAtUtc)
-            .ThenByDescending(o => o.Id)
-            .ToListAsync();
-
-        return Ok(orders.Select(ToResponse));
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [HttpGet("{id:int}")]
@@ -78,28 +48,18 @@ public class OrdersController : ControllerBase
     {
         if (!User.TryGetUserId(out var userId))
         {
-            return Unauthorized(new ApiErrorResponse(
-                "The authentication session is invalid."));
+            return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var order = await _context.Orders
-            .AsNoTracking()
-            .Include(o => o.ArtworkListing)
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .FirstOrDefaultAsync(o => o.Id == id);
+        var result = await _orderService.GetByIdAsync(id, userId);
 
-        if (order is null)
+        return result.Status switch
         {
-            return NotFound(CreateNotFoundResponse(id));
-        }
-
-        if (order.BuyerId != userId && order.SellerId != userId)
-        {
-            return Forbid();
-        }
-
-        return Ok(ToResponse(order));
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [HttpPost]
@@ -110,84 +70,25 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request)
     {
-        if (!User.TryGetUserId(out var buyerId) ||
-            !await _context.Users.AnyAsync(u => u.Id == buyerId))
+        if (!User.TryGetUserId(out var buyerId))
         {
             return Unauthorized(new ApiErrorResponse("A valid user account is required to place an order."));
         }
 
-        var listing = await _context.ArtworkListings
-            .Include(a => a.User)
-            .FirstOrDefaultAsync(a => a.Id == request.ArtworkListingId);
+        var result = await _orderService.CreateOrderAsync(request, buyerId);
 
-        if (listing is null)
+        return result.Status switch
         {
-            return NotFound(new ApiErrorResponse($"Artwork listing {request.ArtworkListingId} was not found."));
-        }
-
-        if (listing.UserId is null || listing.User is null)
-        {
-            return BadRequest(new ApiErrorResponse(
-                "This artwork listing has no seller and cannot be ordered."));
-        }
-
-        if (listing.UserId == buyerId)
-        {
-            return BadRequest(new ApiErrorResponse(
-                "You cannot order your own artwork listing."));
-        }
-
-        if (!listing.LocalPickupAvailable)
-        {
-            return BadRequest(new ApiErrorResponse(
-                "This artwork listing does not offer local pickup and cannot be ordered."));
-        }
-
-        if (listing.Status != ArtworkListingStatus.Available)
-        {
-            return Conflict(new ApiErrorResponse(
-                $"This artwork listing is currently {listing.Status.ToString().ToLowerInvariant()} and cannot be ordered."));
-        }
-
-        var buyer = await _context.Users.FindAsync(buyerId);
-        if (buyer is null)
-        {
-            return Unauthorized(new ApiErrorResponse("Buyer account not found."));
-        }
-
-        var sellerId = listing.UserId.Value;
-        var seller = listing.User;
-
-        var order = new Order
-        {
-            ArtworkListingId = listing.Id,
-            ArtworkListing = listing,
-            BuyerId = buyerId,
-            Buyer = buyer,
-            SellerId = sellerId,
-            Seller = seller,
-            Price = listing.Price,
-            Status = OrderStatus.Pending,
-            PickupNotes = request.PickupNotes?.Trim(),
-            CreatedAtUtc = DateTime.UtcNow
+            ServiceStatus.Success => CreatedAtAction(
+                nameof(GetById),
+                new { id = result.Value!.Id },
+                result.Value),
+            ServiceStatus.Unauthorized => Unauthorized(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
-
-        listing.Status = ArtworkListingStatus.Reserved;
-
-        _context.Orders.Add(order);
-
-        try
-        {
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Conflict(new ApiErrorResponse(
-                "This artwork listing was already reserved by another concurrent order."));
-        }
-
-        var response = ToResponse(order);
-        return CreatedAtAction(nameof(GetById), new { id = order.Id }, response);
     }
 
     [HttpPost("{id:int}/handover")]
@@ -203,33 +104,16 @@ public class OrdersController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var order = await _context.Orders
-            .Include(o => o.ArtworkListing)
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .FirstOrDefaultAsync(o => o.Id == id);
+        var result = await _orderService.ConfirmHandoverAsync(id, userId);
 
-        if (order is null)
+        return result.Status switch
         {
-            return NotFound(CreateNotFoundResponse(id));
-        }
-
-        if (order.SellerId != userId)
-        {
-            return Forbid();
-        }
-
-        if (order.Status != OrderStatus.Pending)
-        {
-            return BadRequest(new ApiErrorResponse(
-                $"Handover can only be confirmed for pending orders. Current status: {order.Status}."));
-        }
-
-        order.Status = OrderStatus.HandedOver;
-        order.HandedOverAtUtc = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        return Ok(ToResponse(order));
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [HttpPost("{id:int}/complete")]
@@ -245,38 +129,16 @@ public class OrdersController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var order = await _context.Orders
-            .Include(o => o.ArtworkListing)
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .FirstOrDefaultAsync(o => o.Id == id);
+        var result = await _orderService.ConfirmReceiptAsync(id, userId);
 
-        if (order is null)
+        return result.Status switch
         {
-            return NotFound(CreateNotFoundResponse(id));
-        }
-
-        if (order.BuyerId != userId)
-        {
-            return Forbid();
-        }
-
-        if (order.Status != OrderStatus.HandedOver)
-        {
-            return BadRequest(new ApiErrorResponse(
-                $"Order receipt can only be confirmed after the seller has handed it over. Current status: {order.Status}."));
-        }
-
-        order.Status = OrderStatus.Completed;
-        order.CompletedAtUtc = DateTime.UtcNow;
-
-        if (order.ArtworkListing is not null)
-        {
-            order.ArtworkListing.Status = ArtworkListingStatus.Sold;
-        }
-
-        await _context.SaveChangesAsync();
-        return Ok(ToResponse(order));
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
+        };
     }
 
     [HttpPost("{id:int}/cancel")]
@@ -292,71 +154,15 @@ public class OrdersController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
 
-        var order = await _context.Orders
-            .Include(o => o.ArtworkListing)
-            .Include(o => o.Buyer)
-            .Include(o => o.Seller)
-            .FirstOrDefaultAsync(o => o.Id == id);
+        var result = await _orderService.CancelOrderAsync(id, request, userId);
 
-        if (order is null)
+        return result.Status switch
         {
-            return NotFound(CreateNotFoundResponse(id));
-        }
-
-        if (order.BuyerId != userId && order.SellerId != userId)
-        {
-            return Forbid();
-        }
-
-        if (order.Status != OrderStatus.Pending)
-        {
-            return BadRequest(new ApiErrorResponse(
-                $"Only pending orders can be cancelled. Current status is '{order.Status}'."));
-        }
-
-        order.Status = OrderStatus.Cancelled;
-        order.CancelledAtUtc = DateTime.UtcNow;
-        order.CancellationReason = string.IsNullOrWhiteSpace(request?.Reason)
-            ? null
-            : request.Reason.Trim();
-
-        if (order.ArtworkListing is not null)
-        {
-            order.ArtworkListing.Status = ArtworkListingStatus.Available;
-        }
-
-        await _context.SaveChangesAsync();
-        return Ok(ToResponse(order));
-    }
-
-    private static OrderResponse ToResponse(Order order)
-    {
-        return new OrderResponse
-        {
-            Id = order.Id,
-            ArtworkListingId = order.ArtworkListingId,
-            ArtworkTitle = order.ArtworkListing?.Title ?? string.Empty,
-            ArtworkImageUrl = order.ArtworkListing?.ImageUrl,
-            ArtworkCategory = order.ArtworkListing?.Category ?? ArtworkCategory.Other,
-            Price = order.Price,
-            BuyerId = order.BuyerId,
-            BuyerDisplayName = order.Buyer?.DisplayName ?? string.Empty,
-            BuyerCity = order.Buyer?.City ?? string.Empty,
-            SellerId = order.SellerId,
-            SellerDisplayName = order.Seller?.DisplayName ?? string.Empty,
-            SellerCity = order.Seller?.City ?? string.Empty,
-            Status = order.Status,
-            PickupNotes = order.PickupNotes,
-            CancellationReason = order.CancellationReason,
-            CreatedAtUtc = order.CreatedAtUtc,
-            HandedOverAtUtc = order.HandedOverAtUtc,
-            CompletedAtUtc = order.CompletedAtUtc,
-            CancelledAtUtc = order.CancelledAtUtc
+            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Forbidden => Forbid(),
+            ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
-    }
-
-    private static ApiErrorResponse CreateNotFoundResponse(int id)
-    {
-        return new ApiErrorResponse($"Order {id} was not found.");
     }
 }

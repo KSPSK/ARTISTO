@@ -1,0 +1,84 @@
+.account-page {
+  max-width: 500px;
+  margin: 64px auto;
+  padding: 32px;
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+body:has(.account-page) {
+  background-color: #f9f9f9;
+}
+
+.account-page h1 {
+  font-family: Georgia, serif;
+  font-size: 50px;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.account-page .account-lead,
+.account-page .account-username {
+  color: #777777;
+}
+
+.account-page .account-lead,
+.account-page .account-username {
+  margin-bottom: 24px;
+}
+
+.account-page .account-name {
+  margin-bottom: 0;
+  font-size: 18px;
+}
+
+.account-page .account-actions .btn {
+  min-height: 48px;
+  padding: 8px 20px;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.account-page .btn-primary {
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.account-page .btn-primary:hover,
+.account-page .btn-primary:active,
+.account-page .btn-primary:focus {
+  background-color: #252e24;
+  border-color: #252e24;
+}
+
+.account-page .btn-outline-primary,
+.account-page .btn-outline-secondary {
+  color: #000000;
+  background-color: transparent;
+  border-color: #000000;
+}
+
+.account-page .btn-outline-primary:hover,
+.account-page .btn-outline-primary:active,
+.account-page .btn-outline-primary:focus,
+.account-page .btn-outline-secondary:hover,
+.account-page .btn-outline-secondary:active,
+.account-page .btn-outline-secondary:focus {
+  color: #ffffff;
+  background-color: #000000;
+  border-color: #000000;
+}
+
+.account-page .btn:focus,
+.account-page .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+@media (max-width: 576px) {
+  .account-page {
+    margin: 24px auto;
+    padding: 24px;
+  }
+}

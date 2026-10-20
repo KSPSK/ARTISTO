@@ -1,0 +1,143 @@
+.creator-profile h1,
+.creator-profile h2 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+}
+
+.creator-profile h1 {
+  font-size: 50px;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.creator-profile h2 {
+  font-size: 32px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.creator-profile .creator-username {
+  margin-bottom: 24px;
+  color: #777777;
+  font-size: 16px;
+}
+
+.creator-profile .listing-details-info {
+  margin-bottom: 28px;
+}
+
+.creator-profile .listing-details-info > div {
+  border-bottom-color: #dddddd;
+}
+
+.creator-profile .listing-details-info dt {
+  color: #777777;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.creator-profile .creator-edit,
+.creator-profile .creator-retry {
+  padding: 8px 20px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.creator-profile .creator-edit {
+  margin-bottom: 28px;
+}
+
+.creator-profile .btn-primary {
+  background: #000000;
+  border-color: #000000;
+}
+
+.creator-profile .btn-primary:hover,
+.creator-profile .btn-primary:active,
+.creator-profile .btn-primary:focus {
+  background: #222222;
+  border-color: #222222;
+}
+
+.creator-profile .btn-secondary {
+  color: #000000;
+  background: transparent;
+  border-color: #000000;
+  border-radius: 2px;
+  padding: 8px 20px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.creator-profile .btn-secondary:hover,
+.creator-profile .btn-secondary:active,
+.creator-profile .btn-secondary:focus {
+  color: #ffffff;
+  background: #000000;
+  border-color: #000000;
+}
+
+.creator-profile .btn:focus,
+.creator-profile .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
+
+.creator-profile a:not(.btn) {
+  color: #777777;
+  text-decoration: none;
+}
+
+.creator-profile a:not(.btn):hover {
+  text-decoration: underline;
+}
+
+.creator-profile .artwork-card {
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.creator-profile .artwork-thumb {
+  border-radius: 2px;
+  margin-bottom: 12px;
+}
+
+.creator-profile .artwork-thumb-empty {
+  background: #f1f1f1;
+  border: 1px solid #dddddd;
+  color: #000000;
+  font-family: Georgia, serif;
+}
+
+.creator-profile .artwork-title {
+  font-family: Georgia, serif;
+  font-size: 22px;
+  font-weight: 400;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.creator-profile .artwork-price {
+  color: #000000;
+  font-weight: 400;
+}
+
+.creator-profile .artwork-open {
+  background: #000000;
+  border-color: #000000;
+  border-radius: 2px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: normal;
+  padding: 6px 12px;
+}
+
+.creator-profile .artwork-open:hover {
+  background: #222222;
+  border-color: #222222;
+}

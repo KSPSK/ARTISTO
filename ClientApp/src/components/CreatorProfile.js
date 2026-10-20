@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
+import "./CreatorProfile.css";
 
 export default function CreatorProfile() {
   const { id } = useParams();
@@ -73,7 +74,7 @@ export default function CreatorProfile() {
 
   if (loading) {
     return (
-      <div className="listing-details-status" role="status">
+      <div className="creator-profile listing-details-status" role="status">
         Loading profile...
       </div>
     );
@@ -81,7 +82,7 @@ export default function CreatorProfile() {
 
   if (notFound) {
     return (
-      <div className="listing-details-status">
+      <div className="creator-profile listing-details-status">
         <h1>Profile not found</h1>
         <p>This creator does not exist.</p>
         <Link to="/artworklistings" className="btn btn-secondary">
@@ -93,12 +94,12 @@ export default function CreatorProfile() {
 
   if (error) {
     return (
-      <div className="listing-details-status">
+      <div className="creator-profile listing-details-status">
         <h1>Something went wrong</h1>
         <p role="alert">{error}</p>
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn btn-primary creator-retry"
           onClick={() => setRetryCount((count) => count + 1)}
         >
           Try again
@@ -108,7 +109,7 @@ export default function CreatorProfile() {
   }
 
   return (
-    <main className="listing-details">
+    <main className="creator-profile listing-details">
       {message && (
         <div className="alert alert-success" role="status">
           {message}
@@ -116,7 +117,7 @@ export default function CreatorProfile() {
       )}
 
       <h1>{user.displayName}</h1>
-      <p className="text-muted">@{user.username}</p>
+      <p className="creator-username">@{user.username}</p>
 
       <dl className="listing-details-info">
         <div>
@@ -130,7 +131,7 @@ export default function CreatorProfile() {
       </dl>
 
       {isOwnProfile && (
-        <Link to={`/users/${user.id}/edit`} className="btn btn-primary mb-4">
+        <Link to={`/users/${user.id}/edit`} className="btn btn-primary creator-edit">
           Edit profile
         </Link>
       )}

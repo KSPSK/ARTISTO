@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
+import "./Home.css";
 
 function formatCategory(category) {
   return category === "DigitalArt" ? "Digital art" : category;
@@ -45,13 +46,13 @@ export function Home() {
   const featured = listings.slice(0, 3);
 
   return (
-    <div className="py-4">
+    <div className="home-page">
       <h1>ARTISTO</h1>
-      <p>
+      <p className="home-intro">
         Discover, buy, and sell original artwork in one accessible marketplace.
       </p>
 
-      <div className="d-grid gap-2 d-sm-flex mb-4">
+      <div className="home-actions d-grid gap-2 d-sm-flex">
         <Link className="btn btn-primary" to="/artworklistings">
           Explore art
         </Link>
@@ -127,7 +128,7 @@ export function Home() {
               </div>
             ))}
           </div>
-          <p className="mt-3">
+          <p className="home-more">
             <Link to="/artworklistings">See all listings</Link>
           </p>
         </>
