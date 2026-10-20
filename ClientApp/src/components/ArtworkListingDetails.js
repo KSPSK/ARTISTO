@@ -140,7 +140,7 @@ export default function ArtworkListingDetails() {
       </Link>
 
       <div className="listing-details-grid">
-          <ListingImage imageUrl={listing.imageUrl} title={listing.title} large />
+        <ListingImage imageUrl={listing.imageUrl} title={listing.title} large />
 
         <div className="listing-details-content">
           <h1>{listing.title}</h1>
