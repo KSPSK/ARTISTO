@@ -120,7 +120,7 @@ export default function CreatorProfileForm() {
 
   if (loading) {
     return (
-      <p className="py-4" role="status">
+      <p className="profile-gate" role="status">
         Loading profile...
       </p>
     );
@@ -146,26 +146,36 @@ export default function CreatorProfileForm() {
 
   if (String(currentUser.id) !== String(id)) {
     return (
-      <div className="py-4">
-        <p>You can only edit your own profile.</p>
-        <Link to={`/users/${id}`}>Back to profile</Link>
-      </div>
+      <main className="profile-gate">
+        <h1>Edit profile</h1>
+        <p className="profile-gate-lead">You can only edit your own profile.</p>
+        <div className="profile-gate-actions">
+          <Link to={`/users/${id}`} className="btn btn-primary">
+            Back to profile
+          </Link>
+        </div>
+      </main>
     );
   }
 
   if (notFound) {
     return (
-      <div className="py-4">
-        <p>Profile not found.</p>
-        <Link to="/artworklistings">Back to listings</Link>
-      </div>
+      <main className="profile-gate">
+        <h1>Profile not found</h1>
+        <p className="profile-gate-lead">This creator does not exist.</p>
+        <div className="profile-gate-actions">
+          <Link to="/artworklistings" className="btn btn-primary">
+            Back to listings
+          </Link>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div className="mx-auto py-4" style={{ maxWidth: 640 }}>
+    <main className="profile-form">
       <h1>Edit profile</h1>
-      <p>Update the display name, city, and description.</p>
+      <p className="profile-form-lead">Update the display name, city, and description.</p>
 
       {error && (
         <div className="alert alert-danger" role="alert">
@@ -213,14 +223,16 @@ export default function CreatorProfileForm() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary">
-            {isSaving ? "Saving..." : "Save profile"}
-          </button>
-          <Link to={`/users/${id}`} className="btn btn-outline-secondary ms-2">
-            Cancel
-          </Link>
+          <div className="profile-form-actions">
+            <button type="submit" className="btn btn-primary">
+              {isSaving ? "Saving..." : "Save profile"}
+            </button>
+            <Link to={`/users/${id}`} className="btn btn-outline-secondary">
+              Cancel
+            </Link>
+          </div>
         </fieldset>
       </form>
-    </div>
+    </main>
   );
 }

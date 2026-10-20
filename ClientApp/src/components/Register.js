@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
+import "./Register.css";
 
 async function readError(response, fallback) {
   const body = await response.json().catch(() => null);
@@ -75,13 +76,13 @@ export default function Register() {
   }
 
   if (authLoading) {
-    return <p className="py-4" role="status">Checking your session...</p>;
+    return <p className="register-page" role="status">Checking your session...</p>;
   }
 
   return (
-    <main className="mx-auto py-5" style={{ maxWidth: 480 }}>
-      <h1 className="mb-2">Create account</h1>
-      <p className="text-muted mb-4">
+    <main className="register-page">
+      <h1>Create account</h1>
+      <p className="register-lead">
         Register a creator profile on ARTISTO.
       </p>
 
@@ -167,7 +168,7 @@ export default function Register() {
         </fieldset>
       </form>
 
-      <p className="mt-3 mb-0">
+      <p className="register-login">
         Already have an account? <Link to="/login">Log in</Link>
       </p>
     </main>
