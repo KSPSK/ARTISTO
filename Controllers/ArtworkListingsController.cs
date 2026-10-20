@@ -87,6 +87,7 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ArtworkListing>> Update(
         int id,
         ArtworkListingWriteRequest request)
@@ -107,6 +108,14 @@ public class ArtworkListingsController : ControllerBase
             return Forbid();
         }
 
+        if (existing.Status != ArtworkListingStatus.Available &&
+            (request.Price != existing.Price ||
+             request.LocalPickupAvailable != existing.LocalPickupAvailable))
+        {
+            return Conflict(new ApiErrorResponse(
+                $"Price and local pickup cannot be changed while the listing is {existing.Status.ToString().ToLowerInvariant()}."));
+        }
+
         existing.Title = request.Title;
         existing.Description = request.Description;
         existing.Price = request.Price;
@@ -114,7 +123,16 @@ public class ArtworkListingsController : ControllerBase
         existing.Category = request.Category;
         existing.LocalPickupAvailable = request.LocalPickupAvailable;
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Conflict(new ApiErrorResponse(
+                "The listing was reserved or changed while you were editing it. Reload it and try again."));
+        }
+        
         return Ok(existing);
     }
 

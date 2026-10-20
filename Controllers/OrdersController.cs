@@ -125,6 +125,24 @@ public class OrdersController : ControllerBase
             return NotFound(new ApiErrorResponse($"Artwork listing {request.ArtworkListingId} was not found."));
         }
 
+        if (listing.UserId is null || listing.User is null)
+        {
+            return BadRequest(new ApiErrorResponse(
+                "This artwork listing has no seller and cannot be ordered."));
+        }
+
+        if (listing.UserId == buyerId)
+        {
+            return BadRequest(new ApiErrorResponse(
+                "You cannot order your own artwork listing."));
+        }
+
+        if (!listing.LocalPickupAvailable)
+        {
+            return BadRequest(new ApiErrorResponse(
+                "This artwork listing does not offer local pickup and cannot be ordered."));
+        }
+
         if (listing.Status != ArtworkListingStatus.Available)
         {
             return Conflict(new ApiErrorResponse(
@@ -137,8 +155,8 @@ public class OrdersController : ControllerBase
             return Unauthorized(new ApiErrorResponse("Buyer account not found."));
         }
 
-        var sellerId = listing.UserId ?? buyerId;
-        var seller = listing.User ?? buyer;
+        var sellerId = listing.UserId.Value;
+        var seller = listing.User;
 
         var order = new Order
         {
@@ -196,7 +214,7 @@ public class OrdersController : ControllerBase
             return NotFound(CreateNotFoundResponse(id));
         }
 
-        if (order.SellerId != userId && order.BuyerId != userId)
+        if (order.SellerId != userId)
         {
             return Forbid();
         }
@@ -238,7 +256,7 @@ public class OrdersController : ControllerBase
             return NotFound(CreateNotFoundResponse(id));
         }
 
-        if (order.BuyerId != userId && order.SellerId != userId)
+        if (order.BuyerId != userId)
         {
             return Forbid();
         }
