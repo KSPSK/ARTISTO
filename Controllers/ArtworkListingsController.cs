@@ -1,8 +1,8 @@
+using ARTISTO.Extensions;
 using ARTISTO.Models;
 using ARTISTO.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ARTISTO.Controllers;
 
@@ -51,7 +51,7 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ArtworkListing>> Create(ArtworkListingWriteRequest request)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("A valid user account is required to create a listing."));
         }
@@ -77,7 +77,7 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<ArtworkListing>> Update(int id, ArtworkListingWriteRequest request)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -103,7 +103,7 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(int id)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -129,7 +129,7 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ArtworkListing>> UploadImage(int id, IFormFile? image)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -154,7 +154,7 @@ public class ArtworkListingsController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteImage(int id)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -168,10 +168,5 @@ public class ArtworkListingsController : ControllerBase
             ServiceStatus.Forbidden => Forbid(),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
-    }
-
-    private bool TryGetAuthenticatedUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
     }
 }

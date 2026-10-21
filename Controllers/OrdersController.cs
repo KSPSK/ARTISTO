@@ -1,8 +1,8 @@
+using ARTISTO.Extensions;
 using ARTISTO.Models;
 using ARTISTO.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace ARTISTO.Controllers;
 
@@ -24,7 +24,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<IEnumerable<OrderResponse>>> GetMyOrders([FromQuery] string? role)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -46,7 +46,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> GetById(int id)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -70,7 +70,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> Create(CreateOrderRequest request)
     {
-        if (!TryGetAuthenticatedUserId(out var buyerId))
+        if (!User.TryGetUserId(out var buyerId))
         {
             return Unauthorized(new ApiErrorResponse("A valid user account is required to place an order."));
         }
@@ -99,7 +99,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> ConfirmHandover(int id)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -124,7 +124,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> ConfirmReceipt(int id)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -149,7 +149,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderResponse>> Cancel(int id, CancelOrderRequest? request)
     {
-        if (!TryGetAuthenticatedUserId(out var userId))
+        if (!User.TryGetUserId(out var userId))
         {
             return Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
         }
@@ -164,10 +164,5 @@ public class OrdersController : ControllerBase
             ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
-    }
-
-    private bool TryGetAuthenticatedUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
     }
 }
