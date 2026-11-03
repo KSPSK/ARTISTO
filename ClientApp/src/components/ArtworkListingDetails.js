@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 import "./ArtworkListingDetails.css";
@@ -16,6 +16,7 @@ const categoryLabels = {
 export default function ArtworkListingDetails() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const message = location.state?.message;
   const listingsPath = location.state?.fromSearch
@@ -106,8 +107,10 @@ export default function ArtworkListingDetails() {
         return;
       }
 
-      setListing({ ...listing, status: "Reserved" });
-      setOrderMessage("Order placed! Arrange the pickup with the seller.");
+      const order = await response.json();
+      navigate(`/orders/${order.id}`, {
+        state: { message: "Order placed! Arrange the pickup with the seller." },
+      });
     } catch {
       setOrderError("Unable to connect to the server. Please try again.");
     } finally {

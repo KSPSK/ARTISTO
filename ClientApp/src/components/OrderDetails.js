@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { ListingImage } from "./ListingImage";
 import "./OrderDetails.css";
@@ -24,6 +24,8 @@ function formatDate(value) {
 
 export default function OrderDetails() {
   const { id } = useParams();
+  const location = useLocation();
+  const flashMessage = location.state?.message;
   const { user, isLoading: authLoading } = useAuth();
   const [order, setOrder] = useState(null);
   const [status, setStatus] = useState("loading");
@@ -185,6 +187,12 @@ export default function OrderDetails() {
           {statusLabels[order.status] || order.status}
         </span>
       </div>
+
+    {flashMessage && !actionMessage && (
+        <div className="alert alert-success" role="status">
+          {flashMessage}
+        </div>
+      )}
 
       <div className="order-details-grid">
         <ListingImage
