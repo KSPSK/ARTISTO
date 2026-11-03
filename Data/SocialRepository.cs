@@ -18,6 +18,9 @@ public class SocialRepository(ArtistoDbContext db) : ISocialRepository
                 case SocialAction.Like:
                     await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"ArtworkLikes\" (\"UserId\", \"ArtworkListingId\") VALUES ({actorId}, {targetId}) ON CONFLICT (\"UserId\", \"ArtworkListingId\") DO NOTHING");
                     break;
+                case SocialAction.Favorite:
+                    await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"ArtworkFavorites\" (\"UserId\", \"ArtworkListingId\") VALUES ({actorId}, {targetId}) ON CONFLICT (\"UserId\", \"ArtworkListingId\") DO NOTHING");
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action));
             }
@@ -29,6 +32,9 @@ public class SocialRepository(ArtistoDbContext db) : ISocialRepository
                 case SocialAction.Like:
                     await db.ArtworkLikes.Where(x => x.UserId == actorId && x.ArtworkListingId == targetId).ExecuteDeleteAsync();
                     break;
+                case SocialAction.Favorite:
+                    await db.ArtworkFavorites.Where(x => x.UserId == actorId && x.ArtworkListingId == targetId).ExecuteDeleteAsync();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action));
             }
@@ -38,6 +44,10 @@ public class SocialRepository(ArtistoDbContext db) : ISocialRepository
     public Task<LikeResponse?> LikesAsync(int id, int? viewer) => db.ArtworkListings.Where(x => x.Id == id)
         .Select(x => new LikeResponse(x.Id, db.ArtworkLikes.Count(l => l.ArtworkListingId == x.Id),
             viewer != null && db.ArtworkLikes.Any(l => l.ArtworkListingId == x.Id && l.UserId == viewer)))
+        .SingleOrDefaultAsync();
+
+    public Task<FavoriteResponse?> FavoriteAsync(int id, int actor) => db.ArtworkListings.Where(x => x.Id == id)
+        .Select(x => new FavoriteResponse(x.Id, db.ArtworkFavorites.Any(f => f.ArtworkListingId == x.Id && f.UserId == actor)))
         .SingleOrDefaultAsync();
 
     private IQueryable<ArtworkResponse> ProjectArtworks(IQueryable<ArtworkListing> query, int? viewer) => query.Select(x => new ArtworkResponse
@@ -55,8 +65,17 @@ public class SocialRepository(ArtistoDbContext db) : ISocialRepository
         IsAvailable = x.Status == ArtworkListingStatus.Available,
         HasImage = x.ImageUrl != null && x.ImageUrl.Trim() != "",
         LikeCount = db.ArtworkLikes.Count(l => l.ArtworkListingId == x.Id),
-        IsLiked = viewer != null && db.ArtworkLikes.Any(l => l.ArtworkListingId == x.Id && l.UserId == viewer)
+        IsLiked = viewer != null && db.ArtworkLikes.Any(l => l.ArtworkListingId == x.Id && l.UserId == viewer),
+        IsSaved = viewer != null && db.ArtworkFavorites.Any(f => f.ArtworkListingId == x.Id && f.UserId == viewer)
     });
+
+    public async Task<PageResponse<ArtworkResponse>> FavoritesAsync(int actor, int page, int size)
+    {
+        var query = db.ArtworkListings.Where(x => db.ArtworkFavorites.Any(f => f.UserId == actor && f.ArtworkListingId == x.Id));
+        var count = await query.CountAsync();
+        var items = await ProjectArtworks(query.OrderBy(x => x.Id).Skip((page - 1) * size).Take(size), actor).ToListAsync();
+        return new(items, page, size, count);
+    }
 
     public async Task<List<ArtworkResponse>> ArtworksAsync(IEnumerable<ArtworkListing> artworks, int? viewer)
     {
