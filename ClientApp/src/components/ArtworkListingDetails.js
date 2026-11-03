@@ -173,7 +173,7 @@ export default function ArtworkListingDetails() {
   const isOwner =
     listing.userId != null &&
     String(listing.userId) === String(user?.id);
-  
+
   const canBuy =
     user != null &&
     !isOwner &&
@@ -243,7 +243,7 @@ export default function ArtworkListingDetails() {
               ? listing.description
               : "No description provided."}
           </p>
-          
+
           {orderMessage && (
             <div className="alert alert-success" role="status">
               {orderMessage}
