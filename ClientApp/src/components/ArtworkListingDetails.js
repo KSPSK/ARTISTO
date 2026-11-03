@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 import "./ArtworkListingDetails.css";
@@ -16,6 +16,7 @@ const categoryLabels = {
 export default function ArtworkListingDetails() {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const message = location.state?.message;
   const listingsPath = location.state?.fromSearch
@@ -27,6 +28,8 @@ export default function ArtworkListingDetails() {
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [socialAction, setSocialAction] = useState("");
+  const [socialError, setSocialError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -71,6 +74,63 @@ export default function ArtworkListingDetails() {
 
     return () => controller.abort();
   }, [id, retryCount]);
+
+  async function toggleSocialAction(action) {
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    const isLikeAction = action === "like";
+    const isActive = isLikeAction ? listing.isLiked : listing.isSaved;
+
+    setSocialAction(action);
+    setSocialError("");
+
+    try {
+      const response = await fetch(
+        `/api/artworklistings/${listing.id}/${action}`,
+        {
+          method: isActive ? "DELETE" : "PUT",
+        }
+      );
+
+      if (response.status === 401) {
+        navigate("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Unable to update ${action}.`);
+      }
+
+      setListing((current) => {
+        if (isLikeAction) {
+          return {
+            ...current,
+            isLiked: !isActive,
+            likeCount: Math.max(
+              0,
+              (current.likeCount ?? 0) + (isActive ? -1 : 1)
+            ),
+          };
+        }
+
+        return {
+          ...current,
+          isSaved: !isActive,
+        };
+      });
+    } catch {
+      setSocialError(
+        action === "like"
+          ? "Unable to update like. Please try again."
+          : "Unable to update favorites. Please try again."
+      );
+    } finally {
+      setSocialAction("");
+    }
+  }
 
   if (loading) {
     return (
@@ -147,6 +207,32 @@ export default function ArtworkListingDetails() {
           <h1>{listing.title}</h1>
 
           <p className="listing-details-price">{formattedPrice}</p>
+
+          <div className="listing-details-actions">
+            <button
+              type="button"
+              className="btn btn-outline-primary"
+              disabled={socialAction !== ""}
+              onClick={() => toggleSocialAction("like")}
+            >
+              {listing.isLiked ? "Unlike" : "Like"} ({listing.likeCount ?? 0})
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              disabled={socialAction !== ""}
+              onClick={() => toggleSocialAction("favorite")}
+            >
+              {listing.isSaved ? "Remove from favorites" : "Save to favorites"}
+            </button>
+          </div>
+
+          {socialError && (
+            <p className="text-danger" role="alert">
+              {socialError}
+            </p>
+          )}
 
           <dl className="listing-details-info">
             <div>
