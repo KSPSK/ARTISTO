@@ -108,3 +108,21 @@
   background-color: #eeeeee;
   color: #777777;
 }
+
+.order-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.order-details-actions .btn {
+  border-radius: 0;
+  text-transform: uppercase;
+}
+
+.order-details-cancel {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dddddd;
+}
