@@ -6,7 +6,15 @@ public class ArtworkLike
     public int ArtworkListingId { get; set; }
 }
 
+public class ArtworkFavorite
+{
+    public int UserId { get; set; }
+    public int ArtworkListingId { get; set; }
+}
+
 public sealed record LikeResponse(int ArtworkListingId, int LikeCount, bool IsLiked);
+public sealed record FavoriteResponse(int ArtworkListingId, bool IsSaved);
+public sealed record PageResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 
 public sealed record ArtworkResponse
 {
@@ -24,4 +32,5 @@ public sealed record ArtworkResponse
     public bool HasImage { get; init; }
     public int LikeCount { get; init; }
     public bool IsLiked { get; init; }
+    public bool IsSaved { get; init; }
 }

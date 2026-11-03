@@ -193,6 +193,18 @@ DELETE {{HostAddress}}/api/artworklistings/1/like
 ### Public like count and current viewer's isLiked (false when anonymous)
 GET {{HostAddress}}/api/artworklistings/1/likes
 
+### Save artwork privately (login required; independent of likes)
+PUT {{HostAddress}}/api/artworklistings/1/favorite
+
+### Remove private bookmark (login required; repeat safely)
+DELETE {{HostAddress}}/api/artworklistings/1/favorite
+
+### Current user's saved state only (login required)
+GET {{HostAddress}}/api/artworklistings/1/favorite
+
+### Current user's favorites only (login required; pageSize 1..100)
+GET {{HostAddress}}/api/users/me/favorites?page=1&pageSize=20
+
 ### Get orders as seller
 GET {{HostAddress}}/api/orders?role=seller
 Accept: application/json

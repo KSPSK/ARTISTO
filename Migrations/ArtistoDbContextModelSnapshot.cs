@@ -22,6 +22,21 @@ namespace ARTISTO.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ARTISTO.Models.ArtworkFavorite", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ArtworkListingId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("UserId", "ArtworkListingId");
+
+                    b.HasIndex("ArtworkListingId");
+
+                    b.ToTable("ArtworkFavorites");
+                });
+
             modelBuilder.Entity("ARTISTO.Models.ArtworkLike", b =>
                 {
                     b.Property<int>("UserId")
@@ -176,6 +191,21 @@ namespace ARTISTO.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.ArtworkFavorite", b =>
+                {
+                    b.HasOne("ARTISTO.Models.ArtworkListing", null)
+                        .WithMany()
+                        .HasForeignKey("ArtworkListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ARTISTO.Models.ArtworkLike", b =>
