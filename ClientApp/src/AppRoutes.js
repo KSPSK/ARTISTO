@@ -7,6 +7,7 @@ import Register from "./components/Register";
 import Account from "./components/Account";
 import CreatorProfile from "./components/CreatorProfile";
 import CreatorProfileForm from "./components/CreatorProfileForm";
+import MyOrders from "./components/MyOrders";
 
 const AppRoutes = [
   {
@@ -32,6 +33,10 @@ const AppRoutes = [
   {
     path: "/account",
     element: <Account />
+  },
+  {
+    path: "/orders",
+    element: <MyOrders />
   },
   {
     path: "/login",
