@@ -184,6 +184,15 @@ Accept: application/json
 GET {{HostAddress}}/api/orders?role=buyer
 Accept: application/json
 
+### Like artwork (login required; repeat safely, including on your own artwork)
+PUT {{HostAddress}}/api/artworklistings/1/like
+
+### Unlike artwork (login required; repeat safely)
+DELETE {{HostAddress}}/api/artworklistings/1/like
+
+### Public like count and current viewer's isLiked (false when anonymous)
+GET {{HostAddress}}/api/artworklistings/1/likes
+
 ### Get orders as seller
 GET {{HostAddress}}/api/orders?role=seller
 Accept: application/json

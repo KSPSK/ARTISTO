@@ -51,6 +51,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ISocialRepository, SocialRepository>();
+builder.Services.AddScoped<ISocialService, SocialService>();
 
 var app = builder.Build();
 
@@ -81,3 +83,5 @@ app.MapControllerRoute(
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+public partial class Program { }

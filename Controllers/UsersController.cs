@@ -14,10 +14,13 @@ namespace ARTISTO.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly ISocialService _social;
+    private int? Viewer => User.Identity?.IsAuthenticated == true && User.TryGetUserId(out var id) ? id : null;
 
-    public UsersController(IUserService userService)
+    public UsersController(IUserService userService, ISocialService social)
     {
         _userService = userService;
+        _social = social;
     }
 
     [HttpPost("register")]
@@ -108,9 +111,9 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id:int}/artworklistings")]
-    [ProducesResponseType<IEnumerable<ArtworkListing>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<IEnumerable<ArtworkResponse>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<IEnumerable<ArtworkListing>>> GetListings(int id)
+    public async Task<ActionResult<IEnumerable<ArtworkResponse>>> GetListings(int id)
     {
         var result = await _userService.GetListingsAsync(id);
         if (!result.IsSuccess)
@@ -118,7 +121,7 @@ public class UsersController : ControllerBase
             return NotFound(new ApiErrorResponse(result.ErrorMessage!));
         }
 
-        return Ok(result.Value);
+        return Ok(await _social.ArtworksAsync(result.Value!, Viewer));
     }
 
     [Authorize]

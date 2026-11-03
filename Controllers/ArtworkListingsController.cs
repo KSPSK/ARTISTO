@@ -11,14 +11,17 @@ namespace ARTISTO.Controllers;
 public class ArtworkListingsController : ControllerBase
 {
     private readonly IArtworkListingService _listingService;
+    private readonly ISocialService _social;
+    private int? Viewer => User.Identity?.IsAuthenticated == true && User.TryGetUserId(out var id) ? id : null;
 
-    public ArtworkListingsController(IArtworkListingService listingService)
+    public ArtworkListingsController(IArtworkListingService listingService, ISocialService social)
     {
         _listingService = listingService;
+        _social = social;
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ArtworkListing>>> GetAll(
+    public async Task<ActionResult<IEnumerable<ArtworkResponse>>> GetAll(
         [FromQuery] string? q = null,
         [FromQuery] ArtworkCategory? category = null,
         [FromQuery] decimal? maxPrice = null)
@@ -28,13 +31,13 @@ public class ArtworkListingsController : ControllerBase
             category: category,
             maxPrice: maxPrice);
 
-        return Ok(listings);
+        return Ok(await _social.ArtworksAsync(listings, Viewer));
     }
 
     [HttpGet("{id:int}")]
-    [ProducesResponseType<ArtworkListing>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ArtworkResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ArtworkListing>> GetById(int id)
+    public async Task<ActionResult<ArtworkResponse>> GetById(int id)
     {
         var listing = await _listingService.GetByIdAsync(id);
         if (listing is null)
@@ -42,7 +45,7 @@ public class ArtworkListingsController : ControllerBase
             return NotFound(new ApiErrorResponse($"Artwork listing {id} was not found."));
         }
 
-        return Ok(listing);
+        return Ok((await _social.ArtworksAsync(new[] { listing }, Viewer)).SingleOrDefault());
     }
 
     [Authorize]

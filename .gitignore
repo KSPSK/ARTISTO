@@ -234,3 +234,6 @@ _Pvt_Extensions
 # Runtime artwork uploads
 /wwwroot/uploads/artworks/*
 !/wwwroot/uploads/artworks/.gitkeep
+
+# Local EF tooling
+.tools/
