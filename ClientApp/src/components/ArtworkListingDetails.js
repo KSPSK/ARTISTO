@@ -27,6 +27,10 @@ export default function ArtworkListingDetails() {
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [pickupNotes, setPickupNotes] = useState("");
+  const [isOrdering, setIsOrdering] = useState(false);
+  const [orderError, setOrderError] = useState("");
+  const [orderMessage, setOrderMessage] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -71,6 +75,45 @@ export default function ArtworkListingDetails() {
 
     return () => controller.abort();
   }, [id, retryCount]);
+
+  async function handleBuy() {
+    setIsOrdering(true);
+    setOrderError("");
+    setOrderMessage("");
+
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          artworkListingId: listing.id,
+          pickupNotes: pickupNotes.trim() || null,
+        }),
+      });
+
+      if (response.status === 401) {
+        setOrderError("Please log in to buy this artwork.");
+        return;
+      }
+
+      if (!response.ok) {
+        const problem = await response.json().catch(() => null);
+        setOrderError(
+          problem?.message || "Unable to place the order. Please try again."
+        );
+        return;
+      }
+
+      setListing({ ...listing, status: "Reserved" });
+      setOrderMessage("Order placed! Arrange the pickup with the seller.");
+    } catch {
+      setOrderError("Unable to connect to the server. Please try again.");
+    } finally {
+      setIsOrdering(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -127,6 +170,12 @@ export default function ArtworkListingDetails() {
   const isOwner =
     listing.userId != null &&
     String(listing.userId) === String(user?.id);
+  
+  const canBuy =
+    user != null &&
+    !isOwner &&
+    listing.status === "Available" &&
+    listing.localPickupAvailable;
 
   return (
     <main className="listing-details">
@@ -177,6 +226,12 @@ export default function ArtworkListingDetails() {
                   : "Not available"}
               </dd>
             </div>
+
+            <div>
+              <dt>Status</dt>
+              <dd>{listing.status}</dd>
+            </div>
+
           </dl>
 
           <h2>Description</h2>
@@ -185,6 +240,49 @@ export default function ArtworkListingDetails() {
               ? listing.description
               : "No description provided."}
           </p>
+          
+          {orderMessage && (
+            <div className="alert alert-success" role="status">
+              {orderMessage}
+            </div>
+          )}
+
+          {orderError && (
+            <div className="alert alert-danger" role="alert">
+              {orderError}
+            </div>
+          )}
+
+          {canBuy && (
+            <div className="listing-details-buy">
+              <label htmlFor="pickupNotes" className="form-label">
+                Pickup notes (optional)
+              </label>
+              <textarea
+                id="pickupNotes"
+                className="form-control mb-2"
+                rows={2}
+                maxLength={1000}
+                value={pickupNotes}
+                onChange={(event) => setPickupNotes(event.target.value)}
+                placeholder="For example: I can pick it up on Saturday afternoon."
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleBuy}
+                disabled={isOrdering}
+              >
+                {isOrdering ? "Placing order..." : "Buy now"}
+              </button>
+            </div>
+          )}
+
+          {!user && listing.status === "Available" && (
+            <p className="text-muted">
+              <Link to="/login">Log in</Link> to buy this artwork.
+            </p>
+          )}
 
           {isOwner && (
             <div className="listing-details-actions">
