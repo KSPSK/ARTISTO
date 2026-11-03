@@ -16,6 +16,7 @@ public class ArtistoDbContext : DbContext
 
     public DbSet<ArtworkLike> ArtworkLikes => Set<ArtworkLike>();
     public DbSet<ArtworkFavorite> ArtworkFavorites => Set<ArtworkFavorite>();
+    public DbSet<UserFollow> UserFollows => Set<UserFollow>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,6 +34,15 @@ public class ArtistoDbContext : DbContext
             entity.HasOne<User>().WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<ArtworkListing>().WithMany().HasForeignKey(x => x.ArtworkListingId).OnDelete(DeleteBehavior.Cascade);
         });
+        modelBuilder.Entity<UserFollow>(entity =>
+        {
+            entity.ToTable("UserFollows", t => t.HasCheckConstraint("CK_UserFollows_NoSelfFollow", "\"FollowerId\" <> \"FollowedUserId\""));
+            entity.HasKey(x => new { x.FollowerId, x.FollowedUserId });
+            entity.HasIndex(x => x.FollowedUserId);
+            entity.HasOne<User>().WithMany().HasForeignKey(x => x.FollowerId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<User>().WithMany().HasForeignKey(x => x.FollowedUserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<User>()
             .HasIndex(u => u.Username)
             .IsUnique();

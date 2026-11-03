@@ -193,6 +193,24 @@ namespace ARTISTO.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.UserFollow", b =>
+                {
+                    b.Property<int>("FollowerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FollowedUserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("FollowerId", "FollowedUserId");
+
+                    b.HasIndex("FollowedUserId");
+
+                    b.ToTable("UserFollows", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_UserFollows_NoSelfFollow", "\"FollowerId\" <> \"FollowedUserId\"");
+                        });
+                });
+
             modelBuilder.Entity("ARTISTO.Models.ArtworkFavorite", b =>
                 {
                     b.HasOne("ARTISTO.Models.ArtworkListing", null)
@@ -258,6 +276,21 @@ namespace ARTISTO.Migrations
                     b.Navigation("Buyer");
 
                     b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.UserFollow", b =>
+                {
+                    b.HasOne("ARTISTO.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("FollowedUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ARTISTO.Models.User", b =>
