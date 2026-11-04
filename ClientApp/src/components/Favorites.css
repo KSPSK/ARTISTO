@@ -1,0 +1,43 @@
+.favorites-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.favorites-page h1 {
+  margin-bottom: 2rem;
+}
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+
+.favorite-card {
+  border: 1px solid #dddddd;
+  padding: 1rem;
+  background: #ffffff;
+}
+
+.favorite-card h2 {
+  margin-top: 1rem;
+  font-size: 1.25rem;
+}
+
+.favorite-price {
+  font-weight: 600;
+}
+
+.favorites-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.favorites-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}

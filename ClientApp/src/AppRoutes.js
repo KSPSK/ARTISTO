@@ -9,6 +9,7 @@ import CreatorProfile from "./components/CreatorProfile";
 import CreatorProfileForm from "./components/CreatorProfileForm";
 import MyOrders from "./components/MyOrders";
 import OrderDetails from "./components/OrderDetails";
+import Favorites from "./components/Favorites";
 
 const AppRoutes = [
   {
@@ -34,6 +35,10 @@ const AppRoutes = [
   {
     path: "/account",
     element: <Account />
+  },
+  {
+  path: "/favorites",
+  element: <Favorites />
   },
   {
     path: "/orders",
