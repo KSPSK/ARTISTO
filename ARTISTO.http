@@ -205,6 +205,21 @@ GET {{HostAddress}}/api/artworklistings/1/favorite
 ### Current user's favorites only (login required; pageSize 1..100)
 GET {{HostAddress}}/api/users/me/favorites?page=1&pageSize=20
 
+### Follow any existing user other than yourself (login required)
+PUT {{HostAddress}}/api/users/2/follow
+
+### Unfollow user (login required; repeat safely)
+DELETE {{HostAddress}}/api/users/2/follow
+
+### Public follower/following counts and viewer's isFollowing
+GET {{HostAddress}}/api/users/2/follow
+
+### Public followers, ordered by user ID
+GET {{HostAddress}}/api/users/2/followers?page=1&pageSize=20
+
+### Public following, ordered by user ID
+GET {{HostAddress}}/api/users/2/following?page=1&pageSize=20
+
 ### Get orders as seller
 GET {{HostAddress}}/api/orders?role=seller
 Accept: application/json

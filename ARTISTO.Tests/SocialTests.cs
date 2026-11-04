@@ -92,7 +92,7 @@ public class SocialTests
         }
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/users/me/favorites")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/artworklistings/1/favorite")).StatusCode);
-        foreach (var path in new[] { "artworklistings/1/like", "artworklistings/1/favorite" })
+        foreach (var path in new[] { "artworklistings/1/like", "artworklistings/1/favorite", "users/1/follow" })
         {
             Assert.Equal(HttpStatusCode.Unauthorized, (await client.PutAsync($"/api/{path}", null)).StatusCode);
             Assert.Equal(HttpStatusCode.Unauthorized, (await client.DeleteAsync($"/api/{path}")).StatusCode);
@@ -113,6 +113,8 @@ public class SocialTests
     [InlineData("/api/artworklistings/1/favorite", "DELETE")]
     [InlineData("/api/artworklistings/1/favorite", "GET")]
     [InlineData("/api/users/me/favorites", "GET")]
+    [InlineData("/api/users/1/follow", "PUT")]
+    [InlineData("/api/users/1/follow", "DELETE")]
     public async Task Private_routes_require_authentication(string url, string method)
     {
         using var app = new SocialApp();
@@ -174,24 +176,56 @@ public class SocialTests
     }
 
     [Fact]
+    public async Task Following_is_public_supports_users_without_listings_and_rejects_self_follow()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var actor = app.Client();
+        using var target = app.Client();
+        using var anonymous = app.Client();
+        var actorId = await app.Register(actor);
+        var targetId = await app.Register(target);
+        Assert.Equal(HttpStatusCode.BadRequest, (await actor.PutAsync($"/api/users/{actorId}/follow", null)).StatusCode);
+        for (var i = 0; i < 2; i++)
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await actor.PutAsync($"/api/users/{targetId}/follow", null)).StatusCode);
+        }
+        var state = await Json(anonymous, $"/api/users/{targetId}/follow");
+        Assert.Equal(1, state.GetProperty("followerCount").GetInt32());
+        Assert.False(state.GetProperty("isFollowing").GetBoolean());
+        Assert.True((await Json(actor, $"/api/users/{targetId}")).GetProperty("isFollowing").GetBoolean());
+        Assert.Equal(1, (await Json(anonymous, $"/api/users/{actorId}/follow")).GetProperty("followingCount").GetInt32());
+        var followers = await Json(anonymous, $"/api/users/{targetId}/followers");
+        Assert.Equal(actorId, followers.GetProperty("items")[0].GetProperty("id").GetInt32());
+        Assert.DoesNotContain("password", followers.ToString(), StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(targetId, (await Json(anonymous, $"/api/users/{actorId}/following")).GetProperty("items")[0].GetProperty("id").GetInt32());
+        for (var i = 0; i < 2; i++)
+        {
+            Assert.Equal(HttpStatusCode.NoContent, (await actor.DeleteAsync($"/api/users/{targetId}/follow")).StatusCode);
+        }
+        Assert.Equal(0, (await Json(anonymous, $"/api/users/{targetId}/follow")).GetProperty("followerCount").GetInt32());
+    }
+
+    [Fact]
     public async Task Missing_targets_and_invalid_pagination_return_consistent_errors()
     {
         using var app = new SocialApp();
         await app.Seed();
         using var client = app.Client();
         var id = await app.Register(client);
-        foreach (var path in new[] { "artworklistings/999/like", "artworklistings/999/favorite" })
+        foreach (var path in new[] { "artworklistings/999/like", "artworklistings/999/favorite", "users/999/follow" })
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.PutAsync($"/api/{path}", null)).StatusCode);
             Assert.Equal(HttpStatusCode.NotFound, (await client.DeleteAsync($"/api/{path}")).StatusCode);
         }
-        foreach (var path in new[] { "artworklistings/999/likes", "artworklistings/999/favorite" })
+        foreach (var path in new[] { "artworklistings/999/likes", "artworklistings/999/favorite", "users/999/follow", "users/999/followers", "users/999/following" })
         {
             Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync($"/api/{path}")).StatusCode);
         }
         foreach (var query in new[] { "page=0", "pageSize=0", "pageSize=101", "page=2147483647&pageSize=100" })
         {
             Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"/api/users/me/favorites?{query}")).StatusCode);
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"/api/users/{id}/followers?{query}")).StatusCode);
         }
     }
 
@@ -217,6 +251,20 @@ public class SocialTests
         Assert.Equal(ids.Take(2), first.GetProperty("items").EnumerateArray().Select(x => x.GetProperty("id").GetInt32()));
         Assert.Equal(ids[2], second.GetProperty("items")[0].GetProperty("id").GetInt32());
         Assert.Equal(0, (await Json(owner, "/api/users/me/favorites?page=5")).GetProperty("items").GetArrayLength());
+        var userIds = new List<int>();
+        for (var i = 0; i < 3; i++)
+        {
+            using var client = app.Client();
+            userIds.Add(await app.Register(client));
+            await client.PutAsync($"/api/users/{ownerId}/follow", null);
+            await owner.PutAsync($"/api/users/{userIds[i]}/follow", null);
+        }
+        foreach (var list in new[] { "followers", "following" })
+        {
+            var page = await Json(owner, $"/api/users/{ownerId}/{list}?pageSize=2&page=2");
+            Assert.Equal(3, page.GetProperty("totalCount").GetInt32());
+            Assert.Equal(userIds[2], page.GetProperty("items")[0].GetProperty("id").GetInt32());
+        }
     }
 
     [Fact]
@@ -227,8 +275,9 @@ public class SocialTests
         using var client = app.Client();
         using var target = app.Client();
         var user = await app.Register(client);
+        var targetId = await app.Register(target);
         var artwork = await app.Artwork(client);
-        foreach (var path in new[] { $"artworklistings/{artwork}/like", $"artworklistings/{artwork}/favorite" })
+        foreach (var path in new[] { $"artworklistings/{artwork}/like", $"artworklistings/{artwork}/favorite", $"users/{targetId}/follow" })
         {
             var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => client.PutAsync($"/api/{path}", null)));
             Assert.All(responses, response => Assert.Equal(HttpStatusCode.NoContent, response.StatusCode));
@@ -237,13 +286,19 @@ public class SocialTests
         var db = scope.ServiceProvider.GetRequiredService<ArtistoDbContext>();
         Assert.Equal(1, await db.ArtworkLikes.CountAsync());
         Assert.Equal(1, await db.ArtworkFavorites.CountAsync());
+        Assert.Equal(1, await db.UserFollows.CountAsync());
         await Assert.ThrowsAsync<SqliteException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"ArtworkLikes\" VALUES ({user}, {artwork})"));
         await Assert.ThrowsAsync<SqliteException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"ArtworkFavorites\" VALUES ({user}, {artwork})"));
+        await Assert.ThrowsAsync<SqliteException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"UserFollows\" VALUES ({user}, {targetId})"));
+        await Assert.ThrowsAsync<SqliteException>(() => db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"UserFollows\" VALUES ({user}, {user})"));
         // The idempotent repository must still surface unrelated FK/check violations.
         var repository = new SocialRepository(db);
+        await Assert.ThrowsAsync<SqliteException>(() => repository.SetAsync(SocialAction.Follow, user, user, true));
         await Assert.ThrowsAsync<SqliteException>(() => repository.SetAsync(SocialAction.Like, user, 999, true));
         await db.ArtworkListings.Where(x => x.Id == artwork).ExecuteDeleteAsync();
         Assert.Equal(0, await db.ArtworkLikes.CountAsync());
         Assert.Equal(0, await db.ArtworkFavorites.CountAsync());
+        await db.Users.Where(x => x.Id == targetId).ExecuteDeleteAsync();
+        Assert.Equal(0, await db.UserFollows.CountAsync());
     }
 }
