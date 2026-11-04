@@ -40,7 +40,7 @@ public class UsersController : ControllerBase
         return CreatedAtAction(
             nameof(GetById),
             new { id = user.Id },
-            UserService.ToResponse(user));
+            (await _social.UsersAsync(new[] { UserService.ToResponse(user) }, user.Id)).Single());
     }
 
     [HttpPost("login")]
@@ -57,7 +57,7 @@ public class UsersController : ControllerBase
         var user = result.Value!;
         await SignInUser(user);
 
-        return Ok(UserService.ToResponse(user));
+        return Ok((await _social.UsersAsync(new[] { UserService.ToResponse(user) }, user.Id)).Single());
     }
 
     [Authorize]
@@ -78,7 +78,7 @@ public class UsersController : ControllerBase
             return Unauthorized(new ApiErrorResponse("The authenticated user no longer exists."));
         }
 
-        return Ok(user);
+        return Ok((await _social.UsersAsync(new[] { user }, Viewer)).SingleOrDefault());
     }
 
     [HttpPost("logout")]
@@ -93,7 +93,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<IEnumerable<UserResponse>>> GetAll()
     {
         var users = await _userService.GetAllAsync();
-        return Ok(users);
+        return Ok(await _social.UsersAsync(users, Viewer));
     }
 
     [HttpGet("{id:int}")]
@@ -107,7 +107,7 @@ public class UsersController : ControllerBase
             return NotFound(new ApiErrorResponse($"User {id} was not found."));
         }
 
-        return Ok(user);
+        return Ok((await _social.UsersAsync(new[] { user }, Viewer)).SingleOrDefault());
     }
 
     [HttpGet("{id:int}/artworklistings")]
@@ -141,7 +141,7 @@ public class UsersController : ControllerBase
 
         return result.Status switch
         {
-            ServiceStatus.Success => Ok(result.Value),
+            ServiceStatus.Success => Ok((await _social.UsersAsync(new[] { result.Value! }, Viewer)).SingleOrDefault()),
             ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
             ServiceStatus.Forbidden => Forbid(),
             _ => StatusCode(StatusCodes.Status500InternalServerError)

@@ -1,0 +1,128 @@
+.order-details {
+  max-width: 900px;
+  margin: 48px auto;
+}
+
+.order-details h1 {
+  font-family: Georgia, serif;
+  font-size: 44px;
+  font-weight: 400;
+  margin: 0;
+}
+
+.order-details h2 {
+  font-family: Georgia, serif;
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.order-details h2 a {
+  color: #000000;
+}
+
+.order-details h3 {
+  font-family: Georgia, serif;
+  font-size: 20px;
+  font-weight: 400;
+  margin-top: 24px;
+}
+
+.order-details-back {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #000000;
+}
+
+.order-details-muted {
+  color: #777777;
+}
+
+.order-details-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.order-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+@media (max-width: 768px) {
+  .order-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.order-details-price {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.order-details-info div {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.order-details-info dt {
+  width: 160px;
+  font-size: 12px;
+  font-weight: 400;
+  color: #777777;
+  text-transform: uppercase;
+}
+
+.order-details-info dd {
+  margin: 0;
+}
+
+.order-details-timeline {
+  padding-left: 18px;
+  color: #555555;
+}
+
+.order-details-status {
+  padding: 4px 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  border: 1px solid #000000;
+}
+
+.order-details-status-pending {
+  background-color: #fff3cd;
+}
+
+.order-details-status-handedover {
+  background-color: #cfe2ff;
+}
+
+.order-details-status-completed {
+  background-color: #d1e7dd;
+}
+
+.order-details-status-cancelled {
+  background-color: #eeeeee;
+  color: #777777;
+}
+
+.order-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.order-details-actions .btn {
+  border-radius: 0;
+  text-transform: uppercase;
+}
+
+.order-details-cancel {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dddddd;
+}

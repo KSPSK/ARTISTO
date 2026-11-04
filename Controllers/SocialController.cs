@@ -68,4 +68,20 @@ public class SocialController(ISocialService social) : ControllerBase
             : Unauthorized(new ApiErrorResponse("The authentication session is invalid."));
     }
 
+    [Authorize, HttpPut("users/{id:int}/follow")]
+    public Task<IActionResult> Follow(int id) => Set(SocialAction.Follow, id, true);
+
+    [Authorize, HttpDelete("users/{id:int}/follow")]
+    public Task<IActionResult> Unfollow(int id) => Set(SocialAction.Follow, id, false);
+
+    [HttpGet("users/{id:int}/follow")]
+    public async Task<IActionResult> FollowState(int id) => ToResponse(await social.FollowsAsync(id, Viewer));
+
+    [HttpGet("users/{id:int}/followers")]
+    public async Task<IActionResult> Followers(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => ToResponse(await social.ConnectionsAsync(id, true, Viewer, page, pageSize));
+
+    [HttpGet("users/{id:int}/following")]
+    public async Task<IActionResult> Following(int id, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+        => ToResponse(await social.ConnectionsAsync(id, false, Viewer, page, pageSize));
 }

@@ -64,6 +64,9 @@ public sealed record UserUpdateRequest
 
 public sealed record UserResponse
 {
+    public int FollowerCount { get; init; }
+    public int FollowingCount { get; init; }
+    public bool IsFollowing { get; init; }
     public int Id { get; init; }
     public string Username { get; init; } = string.Empty;
     public string DisplayName { get; init; } = string.Empty;

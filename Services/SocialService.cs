@@ -11,10 +11,15 @@ public class SocialService(ISocialRepository repository) : ISocialService
         {
             return ServiceResult.Unauthorized("The authenticated user no longer exists.");
         }
-        var exists = await repository.ArtworkExistsAsync(target);
+        var exists = action == SocialAction.Follow
+            ? await repository.UserExistsAsync(target) : await repository.ArtworkExistsAsync(target);
         if (!exists)
         {
-            return ServiceResult.NotFound($"Artwork listing {target} was not found.");
+            return ServiceResult.NotFound(action == SocialAction.Follow ? $"User {target} was not found." : $"Artwork listing {target} was not found.");
+        }
+        if (action == SocialAction.Follow && actor == target)
+        {
+            return ServiceResult.BadRequest("You cannot follow yourself.");
         }
         await repository.SetAsync(action, actor, target, added);
         return ServiceResult.Success();
@@ -36,6 +41,12 @@ public class SocialService(ISocialRepository repository) : ISocialService
         return value is null ? ServiceResult<FavoriteResponse>.NotFound($"Artwork listing {id} was not found.") : ServiceResult<FavoriteResponse>.Success(value);
     }
 
+    public async Task<ServiceResult<FollowResponse>> FollowsAsync(int id, int? viewer)
+    {
+        var value = await repository.FollowsAsync(id, viewer);
+        return value is null ? ServiceResult<FollowResponse>.NotFound($"User {id} was not found.") : ServiceResult<FollowResponse>.Success(value);
+    }
+
     private static bool ValidPage(int page, int size) => page >= 1 && size >= 1 && size <= 100 && (long)(page - 1) * size <= int.MaxValue;
 
     public async Task<ServiceResult<PageResponse<ArtworkResponse>>> FavoritesAsync(int actor, int page, int size)
@@ -51,5 +62,19 @@ public class SocialService(ISocialRepository repository) : ISocialService
         return ServiceResult<PageResponse<ArtworkResponse>>.Success(await repository.FavoritesAsync(actor, page, size));
     }
 
+    public async Task<ServiceResult<PageResponse<UserResponse>>> ConnectionsAsync(int id, bool followers, int? viewer, int page, int size)
+    {
+        if (!ValidPage(page, size))
+        {
+            return ServiceResult<PageResponse<UserResponse>>.BadRequest("Page must be positive and pageSize must be between 1 and 100.");
+        }
+        if (!await repository.UserExistsAsync(id))
+        {
+            return ServiceResult<PageResponse<UserResponse>>.NotFound($"User {id} was not found.");
+        }
+        return ServiceResult<PageResponse<UserResponse>>.Success(await repository.ConnectionsAsync(id, followers, viewer, page, size));
+    }
+
     public Task<List<ArtworkResponse>> ArtworksAsync(IEnumerable<ArtworkListing> artworks, int? viewer) => repository.ArtworksAsync(artworks, viewer);
+    public Task<List<UserResponse>> UsersAsync(IEnumerable<UserResponse> users, int? viewer) => repository.UsersAsync(users, viewer);
 }

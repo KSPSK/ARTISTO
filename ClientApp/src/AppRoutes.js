@@ -7,6 +7,8 @@ import Register from "./components/Register";
 import Account from "./components/Account";
 import CreatorProfile from "./components/CreatorProfile";
 import CreatorProfileForm from "./components/CreatorProfileForm";
+import MyOrders from "./components/MyOrders";
+import OrderDetails from "./components/OrderDetails";
 import Favorites from "./components/Favorites";
 
 const AppRoutes = [
@@ -35,8 +37,16 @@ const AppRoutes = [
     element: <Account />
   },
   {
-    path: "/favorites",
-    element: <Favorites />
+  path: "/favorites",
+  element: <Favorites />
+  },
+  {
+    path: "/orders",
+    element: <MyOrders />
+  },
+  {
+    path: "/orders/:id",
+    element: <OrderDetails />
   },
   {
     path: "/login",

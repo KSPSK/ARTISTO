@@ -12,8 +12,15 @@ public class ArtworkFavorite
     public int ArtworkListingId { get; set; }
 }
 
+public class UserFollow
+{
+    public int FollowerId { get; set; }
+    public int FollowedUserId { get; set; }
+}
+
 public sealed record LikeResponse(int ArtworkListingId, int LikeCount, bool IsLiked);
 public sealed record FavoriteResponse(int ArtworkListingId, bool IsSaved);
+public sealed record FollowResponse(int UserId, int FollowerCount, int FollowingCount, bool IsFollowing);
 public sealed record PageResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 
 public sealed record ArtworkResponse
