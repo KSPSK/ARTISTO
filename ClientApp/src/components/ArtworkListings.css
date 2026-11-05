@@ -56,6 +56,36 @@
   background: #000000;
 }
 
+.artwork-listings .artwork-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.artwork-listings .artwork-filters > div {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.artwork-listings .artwork-search select,
+.artwork-listings .artwork-search input[type="number"] {
+  width: 100%;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #000000;
+  border-radius: 0;
+}
+
+.artwork-listings .artwork-search input:focus,
+.artwork-listings .artwork-search select:focus {
+  outline: none;
+  box-shadow: none;
+  border-color: #000000;
+  background: transparent;
+}
+
 @media (max-width: 575px) {
   .artwork-listings .artwork-search-row {
     flex-wrap: wrap;

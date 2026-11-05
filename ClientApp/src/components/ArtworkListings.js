@@ -1,23 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
+import {
+  artworkCategories,
+  artworkListingsApiUrl,
+  listingFiltersActive,
+  listingSearchPath,
+  readListingFilters,
+} from "../listingsSearch";
 import "./ArtworkListings.css";
 
 export function ArtworkListings() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const searchQuery = searchParams.get("q") ?? "";
-  const [searchInput, setSearchInput] = useState(searchQuery);
+  const filters = readListingFilters(searchParams);
+  const [searchInput, setSearchInput] = useState(filters.q);
+  const [categoryInput, setCategoryInput] = useState(filters.category);
+  const [maxPriceInput, setMaxPriceInput] = useState(filters.maxPrice);
   const [listings, setListings] = useState([]);
   const [status, setStatus] = useState("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [retryCount, setRetryCount] = useState(0);
   const message = location.state?.message;
+  const filtersActive = listingFiltersActive(filters);
 
   useEffect(() => {
-    setSearchInput(searchQuery);
-  }, [searchQuery]);
+    setSearchInput(filters.q);
+    setCategoryInput(filters.category);
+    setMaxPriceInput(filters.maxPrice);
+  }, [filters.q, filters.category, filters.maxPrice]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -25,10 +37,7 @@ export function ArtworkListings() {
     setStatus("loading");
     setErrorMessage("");
 
-    const query = searchQuery.trim();
-    const url = query
-      ? `/api/artworklistings?q=${encodeURIComponent(query)}`
-      : "/api/artworklistings";
+    const url = artworkListingsApiUrl(filters);
 
     fetch(url, { signal: controller.signal })
       .then((response) => {
@@ -49,21 +58,21 @@ export function ArtworkListings() {
       });
 
     return () => controller.abort();
-  }, [searchQuery, retryCount]);
+  }, [filters.q, filters.category, filters.maxPrice, retryCount]);
 
   function handleSearch(event) {
     event.preventDefault();
-    const nextQuery = searchInput.trim();
-
-    navigate(
-      nextQuery
-        ? `/artworklistings?q=${encodeURIComponent(nextQuery)}`
-        : "/artworklistings"
-    );
+    navigate(listingSearchPath({
+      q: searchInput,
+      category: categoryInput,
+      maxPrice: maxPriceInput,
+    }));
   }
 
   function handleClear() {
     setSearchInput("");
+    setCategoryInput("");
+    setMaxPriceInput("");
     navigate("/artworklistings");
   }
 
@@ -87,9 +96,9 @@ export function ArtworkListings() {
       );
     }
 
-    if (listings.length === 0 && searchQuery.trim()) {
+    if (listings.length === 0 && filtersActive) {
       return (
-        <p className="artwork-status">No listings match your search.</p>
+        <p className="artwork-status">No listings match these filters.</p>
       );
     }
 
@@ -102,7 +111,7 @@ export function ArtworkListings() {
       );
     }
 
-    const query = searchQuery.trim();
+    const listingsPath = listingSearchPath(filters);
 
     return (
       <div className="artwork-grid">
@@ -124,7 +133,11 @@ export function ArtworkListings() {
             <Link
               className="btn btn-primary artwork-open"
               to={`/listings/${listing.id}`}
-              state={query ? { fromSearch: query } : undefined}
+              state={
+                filtersActive
+                  ? { fromSearch: filters.q.trim(), listingsPath }
+                  : undefined
+              }
             >
               Open listing
             </Link>
@@ -163,6 +176,42 @@ export function ArtworkListings() {
           <button className="btn btn-outline-secondary" type="button" onClick={handleClear}>
             Clear
           </button>
+        </div>
+        <div className="artwork-filters">
+          <div>
+            <label className="form-label" htmlFor="listing-category">
+              Category
+            </label>
+            <select
+              id="listing-category"
+              className="form-select"
+              value={categoryInput}
+              onChange={(event) => setCategoryInput(event.target.value)}
+            >
+              <option value="">All categories</option>
+              {artworkCategories.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="form-label" htmlFor="listing-max-price">
+              Max price (€)
+            </label>
+            <input
+              id="listing-max-price"
+              className="form-control"
+              type="number"
+              min="0"
+              step="any"
+              inputMode="decimal"
+              value={maxPriceInput}
+              onChange={(event) => setMaxPriceInput(event.target.value)}
+              placeholder="No maximum"
+            />
+          </div>
         </div>
       </form>
 
