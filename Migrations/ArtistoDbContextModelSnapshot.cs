@@ -99,6 +99,48 @@ namespace ARTISTO.Migrations
                     b.ToTable("ArtworkListings");
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.Offer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("numeric(9,2)");
+
+                    b.Property<int>("ArtworkListingId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BuyerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArtworkListingId");
+
+                    b.HasIndex("BuyerId", "ArtworkListingId")
+                        .IsUnique()
+                        .HasFilter("\"Status\" = 0");
+
+                    b.ToTable("Offers", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Offers_Amount", "CAST(\"Amount\" AS numeric) BETWEEN 0.01 AND 1000000");
+                        });
+                });
+
             modelBuilder.Entity("ARTISTO.Models.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -249,6 +291,25 @@ namespace ARTISTO.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.Offer", b =>
+                {
+                    b.HasOne("ARTISTO.Models.ArtworkListing", "ArtworkListing")
+                        .WithMany()
+                        .HasForeignKey("ArtworkListingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", "Buyer")
+                        .WithMany()
+                        .HasForeignKey("BuyerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ArtworkListing");
+
+                    b.Navigation("Buyer");
                 });
 
             modelBuilder.Entity("ARTISTO.Models.Order", b =>

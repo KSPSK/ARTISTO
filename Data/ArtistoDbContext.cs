@@ -13,6 +13,7 @@ public class ArtistoDbContext : DbContext
     public DbSet<ArtworkListing> ArtworkListings => Set<ArtworkListing>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<Offer> Offers => Set<Offer>();
 
     public DbSet<ArtworkLike> ArtworkLikes => Set<ArtworkLike>();
     public DbSet<ArtworkFavorite> ArtworkFavorites => Set<ArtworkFavorite>();
@@ -20,6 +21,16 @@ public class ArtistoDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Offer>(entity =>
+        {
+            entity.ToTable("Offers", t => t.HasCheckConstraint("CK_Offers_Amount", "CAST(\"Amount\" AS numeric) BETWEEN 0.01 AND 1000000"));
+            entity.Property(x => x.Amount).HasPrecision(9, 2);
+            entity.HasIndex(x => new { x.BuyerId, x.ArtworkListingId }).IsUnique().HasFilter("\"Status\" = 0");
+            entity.HasIndex(x => x.ArtworkListingId);
+            entity.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.ArtworkListing).WithMany().HasForeignKey(x => x.ArtworkListingId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<ArtworkLike>(entity =>
         {
             entity.HasKey(x => new { x.UserId, x.ArtworkListingId });
