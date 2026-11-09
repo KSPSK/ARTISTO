@@ -14,7 +14,7 @@ public class ArtistoDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Offer> Offers => Set<Offer>();
-
+    public DbSet<Review> Reviews => Set<Review>();
     public DbSet<ArtworkLike> ArtworkLikes => Set<ArtworkLike>();
     public DbSet<ArtworkFavorite> ArtworkFavorites => Set<ArtworkFavorite>();
     public DbSet<UserFollow> UserFollows => Set<UserFollow>();
@@ -29,6 +29,17 @@ public class ArtistoDbContext : DbContext
             entity.HasIndex(x => x.ArtworkListingId);
             entity.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.ArtworkListing).WithMany().HasForeignKey(x => x.ArtworkListingId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.ToTable("Reviews", t => t.HasCheckConstraint("CK_Reviews_Rating", "\"Rating\" BETWEEN 1 AND 5"));
+            entity.HasIndex(x => x.OrderId).IsUnique();
+            entity.HasIndex(x => x.SellerId);
+            entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.ArtworkListing).WithMany().HasForeignKey(x => x.ArtworkListingId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Reviewer).WithMany().HasForeignKey(x => x.ReviewerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.Seller).WithMany().HasForeignKey(x => x.SellerId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ArtworkLike>(entity =>

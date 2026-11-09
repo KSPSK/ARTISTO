@@ -195,6 +195,53 @@ namespace ARTISTO.Migrations
                     b.ToTable("Orders");
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArtworkListingId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReviewerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SellerId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArtworkListingId");
+
+                    b.HasIndex("OrderId")
+                        .IsUnique();
+
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("SellerId");
+
+                    b.ToTable("Reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Reviews_Rating", "\"Rating\" BETWEEN 1 AND 5");
+                        });
+                });
+
             modelBuilder.Entity("ARTISTO.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -335,6 +382,41 @@ namespace ARTISTO.Migrations
                     b.Navigation("ArtworkListing");
 
                     b.Navigation("Buyer");
+
+                    b.Navigation("Seller");
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.Review", b =>
+                {
+                    b.HasOne("ARTISTO.Models.ArtworkListing", "ArtworkListing")
+                        .WithMany()
+                        .HasForeignKey("ArtworkListingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", "Seller")
+                        .WithMany()
+                        .HasForeignKey("SellerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ArtworkListing");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Reviewer");
 
                     b.Navigation("Seller");
                 });

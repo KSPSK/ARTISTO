@@ -275,3 +275,23 @@ Accept: application/json
 # Run the logout request before this request.
 GET {{HostAddress}}/api/orders?role=buyer
 Accept: application/json
+
+### Leave a review for a completed order
+# Requires login as the buyer of the order. The order must be Completed.
+# Only one review per order. Rating must be between 1 and 5.
+POST {{HostAddress}}/api/reviews
+Content-Type: application/json
+
+{
+  "orderId": 1,
+  "rating": 5,
+  "comment": "Beautiful painting and an easy pickup."
+}
+
+### Get a review by id
+GET {{HostAddress}}/api/reviews/1
+Accept: application/json
+
+### Get a seller's reviews with average rating
+GET {{HostAddress}}/api/users/1/reviews
+Accept: application/json
