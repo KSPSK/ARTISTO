@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 import "./ArtworkListingDetails.css";
+import { returnToListings } from "../listingsSearch";
 
 const categoryLabels = {
   Painting: "Painting",
@@ -19,9 +20,7 @@ export default function ArtworkListingDetails() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const message = location.state?.message;
-  const listingsPath = location.state?.fromSearch
-    ? `/artworklistings?q=${encodeURIComponent(location.state.fromSearch)}`
-    : "/artworklistings";
+  const listingsPath = returnToListings(location.state);
 
   const [listing, setListing] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -377,8 +376,11 @@ export default function ArtworkListingDetails() {
                 to={`/listings/${listing.id}/edit`}
                 className="btn btn-primary"
                 state={
-                  location.state?.fromSearch
-                    ? { fromSearch: location.state.fromSearch }
+                  location.state?.listingsPath || location.state?.fromSearch
+                    ? {
+                        fromSearch: location.state?.fromSearch,
+                        listingsPath: location.state?.listingsPath,
+                      }
                     : undefined
                 }
               >

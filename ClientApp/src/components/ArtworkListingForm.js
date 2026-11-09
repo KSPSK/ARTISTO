@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import "./ArtworkListingForm.css";
+import { returnToListings } from "../listingsSearch";
 
 const initialForm = {
   title: "",
@@ -28,6 +29,7 @@ export default function ArtworkListingForm() {
   const { user, isLoading: authLoading, setUser } = useAuth();
   const isEditing = Boolean(id);
   const fromSearch = location.state?.fromSearch;
+  const listingsPath = returnToListings(location.state);
 
   const [form, setForm] = useState({ ...initialForm });
   const [success, setSuccess] = useState("");
@@ -211,12 +213,7 @@ export default function ArtworkListingForm() {
       }
 
       setIsDeleted(true);
-      navigate(
-        fromSearch
-          ? `/artworklistings?q=${encodeURIComponent(fromSearch)}`
-          : "/artworklistings",
-        { state: { message: "Listing deleted." } }
-      );
+      navigate(listingsPath, { state: { message: "Listing deleted." } });
     } catch {
       setError("Failed to connect to the server. Please try again.");
     } finally {
@@ -300,7 +297,7 @@ export default function ArtworkListingForm() {
           if (!id) {
             navigate(`/listings/${saved.id}/edit`, {
               replace: true,
-              state: { imageError: message, fromSearch },
+              state: { imageError: message, fromSearch, listingsPath: location.state?.listingsPath },
             });
           } else {
             setImageError(message);
@@ -323,6 +320,7 @@ export default function ArtworkListingForm() {
             ? "Listing updated."
             : "Listing created.",
           fromSearch,
+          listingsPath: location.state?.listingsPath,
         },
       });
     } catch {
