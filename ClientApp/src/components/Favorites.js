@@ -15,6 +15,8 @@ export default function Favorites() {
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
+  const [removingId, setRemovingId] = useState(null);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     if (!user) {
@@ -57,6 +59,44 @@ export default function Favorites() {
     return () => controller.abort();
   }, [user, page, retryCount]);
 
+  async function removeFavorite(artworkId) {
+    if (removingId !== null) {
+      return;
+    }
+
+    setRemovingId(artworkId);
+    setActionError("");
+
+    try {
+      const response = await fetch(
+        `/api/artworklistings/${artworkId}/favorite`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove favorite.");
+      }
+
+      setFavorites((current) =>
+        current.filter((artwork) => artwork.id !== artworkId)
+      );
+
+      setTotalCount((current) => Math.max(0, current - 1));
+
+      if (favorites.length === 1 && page > 1) {
+        setPage((current) => current - 1);
+      } else {
+        setRetryCount((current) => current + 1);
+      }
+    } catch {
+      setActionError(
+        "Unable to remove the artwork from favorites. Please try again."
+      );
+    } finally {
+      setRemovingId(null);
+    }
+  }
+
   if (authLoading) {
     return <p role="status">Checking your session...</p>;
   }
@@ -92,7 +132,11 @@ export default function Favorites() {
   return (
     <main className="favorites-page">
       <h1>My favorites</h1>
-
+      {actionError && (
+        <p className="text-danger" role="alert">
+          {actionError}
+        </p>
+      )}
       {favorites.length === 0 ? (
         <div className="favorites-empty">
           <p>You have not saved any artwork yet.</p>
@@ -120,12 +164,23 @@ export default function Favorites() {
                   <p>{artwork.creatorName}</p>
                   <p className="favorite-price">{formattedPrice}</p>
 
-                  <Link
-                    to={`/listings/${artwork.id}`}
-                    className="btn btn-primary"
-                  >
-                    Open artwork
-                  </Link>
+                  <div className="favorite-card-actions">
+                    <Link
+                      to={`/listings/${artwork.id}`}
+                      className="btn btn-primary"
+                    >
+                      Open artwork
+                    </Link>
+
+                    <button
+                      type="button"
+                      className="btn btn-outline-danger"
+                      disabled={removingId !== null}
+                      onClick={() => removeFavorite(artwork.id)}
+                    >
+                      {removingId === artwork.id ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
                 </article>
               );
             })}

@@ -41,3 +41,15 @@
   gap: 1rem;
   margin-top: 2rem;
 }
+
+.favorite-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.favorite-card-actions .btn {
+  flex: 1;
+  min-width: 100px;
+}
