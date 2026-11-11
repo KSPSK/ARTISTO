@@ -52,7 +52,7 @@ public sealed class SocialApp : WebApplicationFactory<Program>
         return (await response.Content.ReadFromJsonAsync<UserResponse>())!.Id;
     }
 
-    public async Task<int> Artwork(HttpClient client)
+    public async Task<int> Artwork(HttpClient client, bool localPickupAvailable = false)
     {
         var response = await client.PostAsJsonAsync("/api/artworklistings", new
         {
@@ -60,7 +60,8 @@ public sealed class SocialApp : WebApplicationFactory<Program>
             description = "Test",
             price = 10,
             creatorName = "Test",
-            category = "Painting"
+            category = "Painting",
+            localPickupAvailable
         });
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return (await response.Content.ReadFromJsonAsync<ArtworkResponse>())!.Id;
