@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 import "./CreatorProfile.css";
@@ -7,13 +7,16 @@ import "./CreatorProfile.css";
 export default function CreatorProfile() {
   const { id } = useParams();
   const location = useLocation();
-  const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
+  const { user: currentUser, isLoading: authLoading } = useAuth();
   const [user, setUser] = useState(null);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState("");
   const message = location.state?.message;
   const isOwnProfile = String(currentUser?.id) === String(id);
 
@@ -72,6 +75,50 @@ export default function CreatorProfile() {
     return () => controller.abort();
   }, [id, retryCount]);
 
+  async function toggleFollow() {
+    if (authLoading || followLoading || !user || isOwnProfile) {
+      return;
+    }
+
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    const shouldFollow = !user.isFollowing;
+
+    setFollowLoading(true);
+    setFollowError("");
+
+    try {
+      const response = await fetch(`/api/users/${user.id}/follow`, {
+        method: shouldFollow ? "PUT" : "DELETE",
+      });
+
+      if (response.status === 401) {
+        navigate("/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error("Failed to update follow status.");
+      }
+
+      setUser((current) => ({
+        ...current,
+        isFollowing: shouldFollow,
+        followerCount: Math.max(
+          0,
+          (current.followerCount ?? 0) + (shouldFollow ? 1 : -1)
+        ),
+      }));
+    } catch {
+      setFollowError("Unable to update follow status. Please try again.");
+    } finally {
+      setFollowLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="creator-profile listing-details-status" role="status">
@@ -119,6 +166,16 @@ export default function CreatorProfile() {
       <h1>{user.displayName}</h1>
       <p className="creator-username">@{user.username}</p>
 
+      <div className="creator-follow-summary">
+        <span>
+          <strong>{user.followerCount ?? 0}</strong> followers
+        </span>
+
+        <span>
+          <strong>{user.followingCount ?? 0}</strong> following
+        </span>
+      </div>
+
       <dl className="listing-details-info">
         <div>
           <dt>City</dt>
@@ -130,10 +187,35 @@ export default function CreatorProfile() {
         </div>
       </dl>
 
-      {isOwnProfile && (
-        <Link to={`/users/${user.id}/edit`} className="btn btn-primary creator-edit">
-          Edit profile
-        </Link>
+      <div className="creator-actions">
+        {isOwnProfile ? (
+          <Link
+            to={`/users/${user.id}/edit`}
+            className="btn btn-primary creator-edit"
+          >
+            Edit profile
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={`btn ${user.isFollowing ? "btn-secondary" : "btn-primary"
+              } creator-follow-action`}
+            disabled={authLoading || followLoading}
+            onClick={toggleFollow}
+          >
+            {followLoading
+              ? "Updating..."
+              : user.isFollowing
+                ? "Unfollow"
+                : "Follow"}
+          </button>
+        )}
+      </div>
+
+      {followError && (
+        <p className="creator-follow-error" role="alert">
+          {followError}
+        </p>
       )}
 
       <h2>Listings</h2>

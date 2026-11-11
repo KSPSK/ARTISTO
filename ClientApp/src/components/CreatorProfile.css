@@ -141,3 +141,38 @@
   background: #222222;
   border-color: #222222;
 }
+
+.creator-profile .creator-follow-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  color: #777777;
+}
+
+  .creator-profile .creator-follow-summary strong {
+    color: #000000;
+    font-weight: 600;
+  }
+
+.creator-profile .creator-actions {
+  margin-bottom: 28px;
+}
+
+.creator-profile .creator-follow-action {
+  min-width: 120px;
+  padding: 8px 20px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+  .creator-profile .creator-follow-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+.creator-profile .creator-follow-error {
+  margin-top: -16px;
+  margin-bottom: 28px;
+  color: #b00020;
+}
