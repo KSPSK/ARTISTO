@@ -62,6 +62,11 @@ public class OfferService(IOfferRepository offers) : IOfferService
             return ServiceResult<OfferResponse>.Forbidden("You cannot make an offer on your own artwork.");
         }
 
+        if (!listing.LocalPickupAvailable)
+        {
+            return ServiceResult<OfferResponse>.BadRequest("This artwork listing does not offer local pickup.");
+        }
+
         if (!listing.IsAvailable)
         {
             return ServiceResult<OfferResponse>.Conflict("This artwork is no longer available.");

@@ -27,6 +27,7 @@ public class OfferRepository(ArtistoDbContext db) : IOfferRepository
             JOIN "Users" AS buyer ON buyer."Id" = {offer.BuyerId}
             WHERE listing."Id" = {offer.ArtworkListingId}
                 AND listing."Status" = {(int)ArtworkListingStatus.Available}
+                AND listing."LocalPickupAvailable" = TRUE
                 AND listing."UserId" <> buyer."Id"
             ON CONFLICT ("BuyerId", "ArtworkListingId") WHERE "Status" = 0 DO NOTHING
             RETURNING "Id"

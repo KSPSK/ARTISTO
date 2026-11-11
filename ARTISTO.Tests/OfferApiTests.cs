@@ -25,7 +25,7 @@ public class OfferApiTests
         using var buyer = app.Client();
         var sellerId = await app.Register(seller);
         var buyerId = await app.Register(buyer);
-        var listingId = await app.Artwork(seller);
+        var listingId = await app.Artwork(seller, localPickupAvailable: true);
 
         using var response = await buyer.PostAsJsonAsync("/api/offers", new
         {
@@ -93,10 +93,12 @@ public class OfferApiTests
     }
 
     [Theory]
-    [InlineData(ArtworkListingStatus.Available, true, HttpStatusCode.BadRequest)]
-    [InlineData(ArtworkListingStatus.Reserved, false, HttpStatusCode.Conflict)]
-    [InlineData(ArtworkListingStatus.Sold, false, HttpStatusCode.Conflict)]
-    public async Task Ineligible_listing_is_rejected(ArtworkListingStatus status, bool sellerless, HttpStatusCode expected)
+    [InlineData(ArtworkListingStatus.Available, true, true, HttpStatusCode.BadRequest)]
+    [InlineData(ArtworkListingStatus.Available, false, false, HttpStatusCode.BadRequest)]
+    [InlineData(ArtworkListingStatus.Reserved, false, true, HttpStatusCode.Conflict)]
+    [InlineData(ArtworkListingStatus.Sold, false, true, HttpStatusCode.Conflict)]
+    public async Task Ineligible_listing_is_rejected(
+        ArtworkListingStatus status, bool sellerless, bool localPickupAvailable, HttpStatusCode expected)
     {
         using var app = new SocialApp();
         await app.Seed();
@@ -104,7 +106,7 @@ public class OfferApiTests
         using var buyer = app.Client();
         var sellerId = await app.Register(seller);
         await app.Register(buyer);
-        var listingId = await app.Artwork(seller);
+        var listingId = await app.Artwork(seller, localPickupAvailable);
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ArtistoDbContext>();
         var listing = await db.ArtworkListings.SingleAsync(artwork => artwork.Id == listingId);
@@ -125,7 +127,7 @@ public class OfferApiTests
         await app.Seed();
         using var seller = app.Client();
         await app.Register(seller);
-        var listingId = await app.Artwork(seller);
+        var listingId = await app.Artwork(seller, localPickupAvailable: true);
 
         using var self = await SubmitOffer(seller, listingId);
         using var missing = await SubmitOffer(seller, int.MaxValue);
@@ -143,7 +145,7 @@ public class OfferApiTests
         using var buyer = app.Client();
         await app.Register(seller);
         await app.Register(buyer);
-        var listingId = await app.Artwork(seller);
+        var listingId = await app.Artwork(seller, localPickupAvailable: true);
 
         var responses = await Task.WhenAll(SubmitOffer(buyer, listingId), SubmitOffer(buyer, listingId));
         using var created = Assert.Single(responses, response => response.StatusCode == HttpStatusCode.Created);
