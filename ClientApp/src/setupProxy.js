@@ -9,6 +9,7 @@ const context = [
   "/api/users",
   "/api/orders",
   "/api/reviews",
+  "/api/offers",
   "/uploads",
 ];
 

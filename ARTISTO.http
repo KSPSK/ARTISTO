@@ -295,3 +295,14 @@ Accept: application/json
 ### Get a seller's reviews with average rating
 GET {{HostAddress}}/api/users/1/reviews
 Accept: application/json
+
+### Make an offer on an available artwork owned by another user
+# Sign in as the buyer and replace the listing ID with an available artwork.
+POST {{HostAddress}}/api/offers
+Content-Type: application/json
+
+{
+  "artworkListingId": 1,
+  "amount": 75.50,
+  "message": "Would you consider this offer?"
+}
