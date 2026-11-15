@@ -208,6 +208,39 @@ public class SocialTests
     }
 
     [Fact]
+    public async Task Public_connection_lists_report_follow_state_for_each_viewer()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var profile = app.Client();
+        using var connection = app.Client();
+        using var viewer = app.Client();
+        using var anonymous = app.Client();
+        var profileId = await app.Register(profile);
+        var connectionId = await app.Register(connection);
+        await app.Register(viewer);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await profile.PutAsync($"/api/users/{connectionId}/follow", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await connection.PutAsync($"/api/users/{profileId}/follow", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await viewer.PutAsync($"/api/users/{connectionId}/follow", null)).StatusCode);
+
+        foreach (var list in new[] { "followers", "following" })
+        {
+            var path = $"/api/users/{profileId}/{list}";
+            var viewerItem = Assert.Single((await Json(viewer, path)).GetProperty("items").EnumerateArray());
+            var connectionItem = Assert.Single((await Json(connection, path)).GetProperty("items").EnumerateArray());
+            var anonymousItem = Assert.Single((await Json(anonymous, path)).GetProperty("items").EnumerateArray());
+
+            Assert.Equal(connectionId, viewerItem.GetProperty("id").GetInt32());
+            Assert.Equal(connectionId, connectionItem.GetProperty("id").GetInt32());
+            Assert.Equal(connectionId, anonymousItem.GetProperty("id").GetInt32());
+            Assert.True(viewerItem.GetProperty("isFollowing").GetBoolean());
+            Assert.False(connectionItem.GetProperty("isFollowing").GetBoolean());
+            Assert.False(anonymousItem.GetProperty("isFollowing").GetBoolean());
+        }
+    }
+
+    [Fact]
     public async Task Missing_targets_and_invalid_pagination_return_consistent_errors()
     {
         using var app = new SocialApp();

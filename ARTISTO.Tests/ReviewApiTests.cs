@@ -80,6 +80,34 @@ public class ReviewApiTests
     }
 
     [Fact]
+    public async Task Creating_a_review_returns_a_location_that_anonymous_visitors_can_read()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var seller = app.Client();
+        using var buyer = app.Client();
+        using var anonymous = app.Client();
+        await app.Register(seller);
+        await app.Register(buyer);
+        var orderId = await CompletedOrder(seller, buyer);
+
+        using var created = await LeaveReview(buyer, orderId, 5, "Great pickup experience.");
+
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var location = created.Headers.Location;
+        Assert.NotNull(location);
+        var createdReview = await created.Content.ReadFromJsonAsync<JsonElement>();
+
+        using var response = await anonymous.GetAsync(location);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var publicReview = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(createdReview.GetProperty("id").GetInt32(), publicReview.GetProperty("id").GetInt32());
+        Assert.Equal(orderId, publicReview.GetProperty("orderId").GetInt32());
+        Assert.Equal("Great pickup experience.", publicReview.GetProperty("comment").GetString());
+    }
+
+    [Fact]
     public async Task Only_the_buyer_can_review_the_order()
     {
         using var app = new SocialApp();
@@ -146,6 +174,27 @@ public class ReviewApiTests
         var response = await LeaveReview(buyer, orderId, rating);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Review_comments_can_have_at_most_one_thousand_characters()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var seller = app.Client();
+        using var buyer = app.Client();
+        await app.Register(seller);
+        await app.Register(buyer);
+        var orderId = await CompletedOrder(seller, buyer);
+        var maxLengthComment = new string('a', 1000);
+
+        using var tooLong = await LeaveReview(buyer, orderId, 5, maxLengthComment + "a");
+        Assert.Equal(HttpStatusCode.BadRequest, tooLong.StatusCode);
+
+        using var withinLimit = await LeaveReview(buyer, orderId, 5, maxLengthComment);
+        Assert.Equal(HttpStatusCode.Created, withinLimit.StatusCode);
+        var review = await withinLimit.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(maxLengthComment, review.GetProperty("comment").GetString());
     }
 
     [Fact]
