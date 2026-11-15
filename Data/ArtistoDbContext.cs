@@ -18,9 +18,33 @@ public class ArtistoDbContext : DbContext
     public DbSet<ArtworkLike> ArtworkLikes => Set<ArtworkLike>();
     public DbSet<ArtworkFavorite> ArtworkFavorites => Set<ArtworkFavorite>();
     public DbSet<UserFollow> UserFollows => Set<UserFollow>();
+    public DbSet<Conversation> Conversations => Set<Conversation>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Conversation>(entity =>
+        {
+            entity.ToTable("Conversations", t => t.HasCheckConstraint("CK_Conversations_ParticipantsOrder", "\"UserOneId\" < \"UserTwoId\""));
+            entity.HasIndex(x => new { x.UserOneId, x.UserTwoId }).IsUnique().HasFilter("\"ArtworkListingId\" IS NULL");
+            entity.HasIndex(x => new { x.UserOneId, x.UserTwoId, x.ArtworkListingId }).IsUnique().HasFilter("\"ArtworkListingId\" IS NOT NULL");
+            entity.HasIndex(x => x.UserTwoId);
+            entity.HasIndex(x => x.ArtworkListingId);
+            entity.HasOne(x => x.UserOne).WithMany().HasForeignKey(x => x.UserOneId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.UserTwo).WithMany().HasForeignKey(x => x.UserTwoId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.ArtworkListing).WithMany().HasForeignKey(x => x.ArtworkListingId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.ToTable("ChatMessages", t => t.HasCheckConstraint("CK_ChatMessages_Content", "LENGTH(TRIM(\"Content\")) BETWEEN 1 AND 2000"));
+            entity.Property(x => x.Content).HasMaxLength(2000);
+            entity.HasIndex(x => new { x.ConversationId, x.SentAtUtc });
+            entity.HasIndex(x => x.SenderId);
+            entity.HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.ConversationId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Sender).WithMany().HasForeignKey(x => x.SenderId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Offer>(entity =>
         {
             entity.ToTable("Offers", t => t.HasCheckConstraint("CK_Offers_Amount", "CAST(\"Amount\" AS numeric) BETWEEN 0.01 AND 1000000"));
