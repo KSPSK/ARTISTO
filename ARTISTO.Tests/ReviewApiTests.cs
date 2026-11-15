@@ -183,11 +183,41 @@ public class ReviewApiTests
         var summary = await response.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(2, summary.GetProperty("reviewCount").GetInt32());
         Assert.Equal(4.5, summary.GetProperty("averageRating").GetDouble());
+        Assert.Equal(2, summary.GetProperty("completedSalesCount").GetInt32());
         Assert.Equal(2, summary.GetProperty("reviews").GetArrayLength());
     }
 
     [Fact]
-    public async Task Seller_without_reviews_has_no_average()
+    public async Task Completed_sales_include_unreviewed_orders_and_only_count_for_the_seller()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var seller = app.Client();
+        using var otherUser = app.Client();
+        using var anonymous = app.Client();
+        var sellerId = await app.Register(seller);
+        await app.Register(otherUser);
+
+        await CompletedOrder(seller, otherUser);
+        await CompletedOrder(otherUser, seller);
+
+        await PlaceOrder(otherUser, await CreateListing(seller));
+        var handedOverOrderId = await PlaceOrder(otherUser, await CreateListing(seller));
+        Assert.Equal(HttpStatusCode.OK, (await seller.PostAsync($"/api/orders/{handedOverOrderId}/handover", null)).StatusCode);
+        var cancelledOrderId = await PlaceOrder(otherUser, await CreateListing(seller));
+        Assert.Equal(HttpStatusCode.OK, (await otherUser.PostAsJsonAsync($"/api/orders/{cancelledOrderId}/cancel", new { reason = "Changed my mind" })).StatusCode);
+
+        using var response = await anonymous.GetAsync($"/api/users/{sellerId}/reviews");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var summary = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, summary.GetProperty("completedSalesCount").GetInt32());
+        Assert.Equal(0, summary.GetProperty("reviewCount").GetInt32());
+        Assert.Equal(JsonValueKind.Null, summary.GetProperty("averageRating").ValueKind);
+    }
+
+    [Fact]
+    public async Task Seller_without_reviews_or_sales_has_zero_counts_and_no_average()
     {
         using var app = new SocialApp();
         await app.Seed();
@@ -197,6 +227,19 @@ public class ReviewApiTests
         var summary = await (await seller.GetAsync($"/api/users/{sellerId}/reviews")).Content.ReadFromJsonAsync<JsonElement>();
 
         Assert.Equal(0, summary.GetProperty("reviewCount").GetInt32());
+        Assert.Equal(0, summary.GetProperty("completedSalesCount").GetInt32());
         Assert.Equal(JsonValueKind.Null, summary.GetProperty("averageRating").ValueKind);
+    }
+
+    [Fact]
+    public async Task Missing_seller_returns_not_found()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var anonymous = app.Client();
+
+        using var response = await anonymous.GetAsync("/api/users/999999/reviews");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 }

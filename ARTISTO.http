@@ -292,7 +292,10 @@ Content-Type: application/json
 GET {{HostAddress}}/api/reviews/1
 Accept: application/json
 
-### Get a seller's reviews with average rating
+### Get a seller's public reviews and reputation stats
+# Returns averageRating, reviewCount, completedSalesCount, and the reviews list.
+# Completed sales include all completed orders for this seller, including orders without reviews.
+# A seller without reviews has averageRating set to null.
 GET {{HostAddress}}/api/users/1/reviews
 Accept: application/json
 
