@@ -45,5 +45,7 @@ public sealed record SellerReviewsResponse
 
     public int ReviewCount { get; init; }
 
+    public int CompletedSalesCount { get; init; }
+
     public IReadOnlyList<ReviewResponse> Reviews { get; init; } = [];
 }
