@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { postJson } from "../api";
 import { useApiData } from "../useApiData";
+import "./Reviews.css";
 
 export default function ReviewForm({ order }) {
   const { data, error, reload } = useApiData(
@@ -49,7 +50,7 @@ export default function ReviewForm({ order }) {
 
   if (saved || existingReview) {
     return (
-      <section className="border rounded p-3 mt-4">
+      <section className="reviews-section border rounded p-3 mt-4">
         <h2>Your review</h2>
         <p role="status">You have reviewed this order.</p>
         <Link to={`/users/${order.sellerId}`}>
@@ -61,9 +62,9 @@ export default function ReviewForm({ order }) {
 
   if (error) {
     return (
-      <section className="mt-4">
+      <section className="reviews-section mt-4">
         <p role="alert">{error}</p>
-        <button type="button" onClick={reload}>Try again</button>
+        <button type="button" className="btn btn-primary" onClick={reload}>Try again</button>
       </section>
     );
   }
@@ -73,7 +74,7 @@ export default function ReviewForm({ order }) {
   }
 
   return (
-    <section className="border rounded p-3 mt-4">
+    <section className="reviews-section border rounded p-3 mt-4">
       <h2>Leave a review</h2>
 
       <form onSubmit={submit}>

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { useApiData } from "../useApiData";
+import "./Reviews.css";
 
 export default function CreatorReviews({ sellerId }) {
   const { data, error, reload } = useApiData(
@@ -8,13 +9,13 @@ export default function CreatorReviews({ sellerId }) {
   );
 
   return (
-    <section className="my-4" aria-label="Reviews and reputation">
+    <section className="reviews-section my-4" aria-label="Reviews and reputation">
       <h2>Reviews and reputation</h2>
 
       {error && (
         <div role="alert">
           <p>{error}</p>
-          <button type="button" onClick={reload}>Try again</button>
+          <button type="button" className="btn btn-primary" onClick={reload}>Try again</button>
         </div>
       )}
 

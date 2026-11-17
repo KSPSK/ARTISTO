@@ -1,0 +1,22 @@
+.start-chat .btn-secondary {
+  padding: 8px 20px;
+  color: #000000;
+  background: transparent;
+  border-color: #000000;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.start-chat .btn-secondary:hover,
+.start-chat .btn-secondary:active,
+.start-chat .btn-secondary:focus {
+  color: #ffffff;
+  background: #000000;
+  border-color: #000000;
+}
+
+.start-chat .btn:focus,
+.start-chat .btn:active:focus {
+  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+}
