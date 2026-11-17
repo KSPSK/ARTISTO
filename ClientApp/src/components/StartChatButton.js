@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { postJson } from "../api";
+import "./StartChatButton.css";
 
 export default function StartChatButton({
   participantId,
@@ -46,10 +47,10 @@ export default function StartChatButton({
   }
 
   return (
-    <div className="my-3">
+    <div className="start-chat my-3">
       <button
         type="button"
-        className="btn btn-outline-primary"
+        className="btn btn-secondary"
         disabled={isLoading || busy}
         onClick={start}
       >

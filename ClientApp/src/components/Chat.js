@@ -17,7 +17,7 @@ function ChatAccess({ children }) {
       <main className="chat-page">
         <h1>Messages</h1>
         <p>Log in to view your conversations.</p>
-        <Link to="/login">Log in</Link>
+        <Link className="btn btn-primary" to="/login">Log in</Link>
       </main>
     );
   }
@@ -42,7 +42,7 @@ function ConversationList() {
 
       <button
         type="button"
-        className="btn btn-outline-secondary mb-3"
+        className="btn btn-secondary mb-3"
         onClick={reload}
       >
         Refresh
@@ -138,7 +138,7 @@ function ConversationContent({ id, user }) {
       {error && (
         <div role="alert">
           <p>{error}</p>
-          <button type="button" onClick={reload}>Try again</button>
+          <button type="button" className="btn btn-primary" onClick={reload}>Try again</button>
         </div>
       )}
 
