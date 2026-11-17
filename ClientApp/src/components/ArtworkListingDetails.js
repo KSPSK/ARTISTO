@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
+import OfferForm from "./OfferForm";
 import { useAuth } from "../AuthContext";
 import "./ArtworkListingDetails.css";
 import { returnToListings } from "../listingsSearch";
@@ -18,7 +19,7 @@ export default function ArtworkListingDetails() {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const message = location.state?.message;
   const listingsPath = returnToListings(location.state);
 
@@ -237,6 +238,11 @@ export default function ArtworkListingDetails() {
     !isOwner &&
     listing.status === "Available" &&
     listing.localPickupAvailable;
+  const canOffer =
+    listing.userId != null &&
+    !isOwner &&
+    listing.status === "Available" &&
+    listing.localPickupAvailable;
 
   return (
     <main className="listing-details">
@@ -364,9 +370,13 @@ export default function ArtworkListingDetails() {
             </div>
           )}
 
-          {!user && listing.status === "Available" && (
+          {user && canOffer && (
+            <OfferForm key={`${listing.id}:${user.id}`} listingId={listing.id} />
+          )}
+
+          {!authLoading && !user && canOffer && (
             <p className="text-muted">
-              <Link to="/login">Log in</Link> to buy this artwork.
+              <Link to="/login">Log in</Link> to buy or make an offer on this artwork.
             </p>
           )}
 
