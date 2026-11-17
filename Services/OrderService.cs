@@ -44,17 +44,28 @@ public class OrderService : IOrderService
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
-    public async Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
+    public Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
+    {
+        return PlaceOrderAsync(request.ArtworkListingId, buyerId, agreedPrice: null, request.PickupNotes);
+    }
+
+    public Task<ServiceResult<OrderResponse>> CreateOrderFromOfferAsync(int listingId, int buyerId, decimal agreedPrice)
+    {
+        return PlaceOrderAsync(listingId, buyerId, agreedPrice, pickupNotes: null);
+    }
+
+    private async Task<ServiceResult<OrderResponse>> PlaceOrderAsync(
+        int listingId, int buyerId, decimal? agreedPrice, string? pickupNotes)
     {
         if (!await _orderRepository.UserExistsAsync(buyerId))
         {
             return ServiceResult<OrderResponse>.Unauthorized("A valid user account is required to place an order.");
         }
 
-        var listing = await _orderRepository.GetListingWithUserAsync(request.ArtworkListingId);
+        var listing = await _orderRepository.GetListingWithUserAsync(listingId);
         if (listing is null)
         {
-            return ServiceResult<OrderResponse>.NotFound($"Artwork listing {request.ArtworkListingId} was not found.");
+            return ServiceResult<OrderResponse>.NotFound($"Artwork listing {listingId} was not found.");
         }
 
         if (listing.UserId is null || listing.User is null)
@@ -95,9 +106,9 @@ public class OrderService : IOrderService
             Buyer = buyer,
             SellerId = sellerId,
             Seller = seller,
-            Price = listing.Price,
+            Price = agreedPrice ?? listing.Price,
             Status = OrderStatus.Pending,
-            PickupNotes = request.PickupNotes?.Trim(),
+            PickupNotes =  pickupNotes?.Trim(),
             CreatedAtUtc = DateTime.UtcNow
         };
 
