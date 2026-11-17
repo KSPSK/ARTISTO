@@ -205,6 +205,13 @@ public class OrderService : IOrderService
         }
 
         await _orderRepository.SaveChangesAsync();
+
+        await _notificationService.NotifyAsync(
+            order.SellerId,
+            NotificationType.OrderCompleted,
+            $"{order.Buyer?.DisplayName} confirmed receipt of \"{order.ArtworkListing?.Title}\". The order is completed.",
+            $"/orders/{order.Id}");
+
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
