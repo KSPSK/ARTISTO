@@ -292,7 +292,10 @@ Content-Type: application/json
 GET {{HostAddress}}/api/reviews/1
 Accept: application/json
 
-### Get a seller's reviews with average rating
+### Get a seller's public reviews and reputation stats
+# Returns averageRating, reviewCount, completedSalesCount, and the reviews list.
+# Completed sales include all completed orders for this seller, including orders without reviews.
+# A seller without reviews has averageRating set to null.
 GET {{HostAddress}}/api/users/1/reviews
 Accept: application/json
 
@@ -341,4 +344,25 @@ Content-Type: application/json
 
 {
   "content": "Yes, Saturday afternoon works great for pickup!"
+### List my offers (role=buyer for sent offers, role=seller for received offers)
+GET {{HostAddress}}/api/offers?role=seller
+Accept: application/json
+
+### Get one offer (buyer or seller only)
+GET {{HostAddress}}/api/offers/1
+Accept: application/json
+
+### Seller accepts a pending offer, or buyer accepts a counter-offer (creates an order)
+POST {{HostAddress}}/api/offers/1/accept
+
+### Seller declines a pending offer, or buyer declines a counter-offer
+POST {{HostAddress}}/api/offers/1/decline
+
+### Seller makes a counter-offer (higher than the offer, not above the listing price)
+POST {{HostAddress}}/api/offers/1/counter
+Content-Type: application/json
+
+{
+  "amount": 90,
+  "message": "I can do 90."
 }

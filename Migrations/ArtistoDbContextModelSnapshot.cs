@@ -194,12 +194,26 @@ namespace ARTISTO.Migrations
                     b.Property<int>("BuyerId")
                         .HasColumnType("integer");
 
+                    b.Property<decimal?>("CounterAmount")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("numeric(9,2)");
+
+                    b.Property<string>("CounterMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Message")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RespondedAtUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -208,6 +222,8 @@ namespace ARTISTO.Migrations
 
                     b.HasIndex("ArtworkListingId");
 
+                    b.HasIndex("OrderId");
+
                     b.HasIndex("BuyerId", "ArtworkListingId")
                         .IsUnique()
                         .HasFilter("\"Status\" = 0");
@@ -215,6 +231,8 @@ namespace ARTISTO.Migrations
                     b.ToTable("Offers", null, t =>
                         {
                             t.HasCheckConstraint("CK_Offers_Amount", "CAST(\"Amount\" AS numeric) BETWEEN 0.01 AND 1000000");
+
+                            t.HasCheckConstraint("CK_Offers_CounterAmount", "\"CounterAmount\" IS NULL OR CAST(\"CounterAmount\" AS numeric) BETWEEN 0.01 AND 1000000");
                         });
                 });
 
@@ -476,9 +494,16 @@ namespace ARTISTO.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("ARTISTO.Models.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("ArtworkListing");
 
                     b.Navigation("Buyer");
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ARTISTO.Models.Order", b =>

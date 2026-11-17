@@ -35,4 +35,65 @@ public class OfferRepository(ArtistoDbContext db) : IOfferRepository
 
         return ids.Count == 0 ? null : ids.Single();
     }
+
+    public async Task<List<Offer>> GetOffersForUserAsync(int userId, string? role)
+    {
+        var query = db.Offers
+            .AsNoTracking()
+            .Include(offer => offer.ArtworkListing)
+                .ThenInclude(listing => listing!.User)
+            .Include(offer => offer.Buyer)
+            .AsQueryable();
+
+        if (string.Equals(role, "buyer", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(offer => offer.BuyerId == userId);
+        }
+        else if (string.Equals(role, "seller", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(offer => offer.ArtworkListing!.UserId == userId);
+        }
+        else
+        {
+            query = query.Where(offer => offer.BuyerId == userId || offer.ArtworkListing!.UserId == userId);
+        }
+
+        return await query
+            .OrderByDescending(offer => offer.CreatedAtUtc)
+            .ThenByDescending(offer => offer.Id)
+            .ToListAsync();
+    }
+
+    public async Task<Offer?> GetByIdAsync(int id)
+    {
+        return await db.Offers
+            .AsNoTracking()
+            .Include(offer => offer.ArtworkListing)
+                .ThenInclude(listing => listing!.User)
+            .Include(offer => offer.Buyer)
+            .FirstOrDefaultAsync(offer => offer.Id == id);
+    }
+
+    public async Task<Offer?> GetByIdForUpdateAsync(int id)
+    {
+        return await db.Offers
+            .Include(offer => offer.ArtworkListing)
+                .ThenInclude(listing => listing!.User)
+            .Include(offer => offer.Buyer)
+            .FirstOrDefaultAsync(offer => offer.Id == id);
+    }
+
+    public async Task<List<Offer>> GetOpenOffersForListingAsync(int listingId, int exceptOfferId)
+    {
+        return await db.Offers
+            .Where(offer => offer.ArtworkListingId == listingId
+                && offer.Id != exceptOfferId
+                && (offer.Status == OfferStatus.Pending || offer.Status == OfferStatus.Countered))
+            .ToListAsync();
+    }
+
+    public async Task SaveChangesAsync()
+    {
+        await db.SaveChangesAsync();
+    }
 }

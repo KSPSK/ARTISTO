@@ -40,6 +40,11 @@ public class OrderRepository : IOrderRepository
             .ToListAsync();
     }
 
+    public Task<int> CountCompletedSalesAsync(int sellerId)
+    {
+        return _context.Orders.CountAsync(order => order.SellerId == sellerId && order.Status == OrderStatus.Completed);
+    }
+
     public async Task<Order?> GetByIdAsync(int id)
     {
         return await _context.Orders
