@@ -306,3 +306,26 @@ Content-Type: application/json
   "amount": 75.50,
   "message": "Would you consider this offer?"
 }
+
+### List my offers (role=buyer for sent offers, role=seller for received offers)
+GET {{HostAddress}}/api/offers?role=seller
+Accept: application/json
+
+### Get one offer (buyer or seller only)
+GET {{HostAddress}}/api/offers/1
+Accept: application/json
+
+### Seller accepts a pending offer, or buyer accepts a counter-offer (creates an order)
+POST {{HostAddress}}/api/offers/1/accept
+
+### Seller declines a pending offer, or buyer declines a counter-offer
+POST {{HostAddress}}/api/offers/1/decline
+
+### Seller makes a counter-offer (higher than the offer, not above the listing price)
+POST {{HostAddress}}/api/offers/1/counter
+Content-Type: application/json
+
+{
+  "amount": 90,
+  "message": "I can do 90."
+}
