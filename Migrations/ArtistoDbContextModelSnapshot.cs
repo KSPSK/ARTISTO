@@ -99,6 +99,83 @@ namespace ARTISTO.Migrations
                     b.ToTable("ArtworkListings");
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.ChatMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SenderId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("ConversationId", "SentAtUtc");
+
+                    b.ToTable("ChatMessages", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_ChatMessages_Content", "LENGTH(TRIM(\"Content\")) BETWEEN 1 AND 2000");
+                        });
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.Conversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ArtworkListingId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastMessageAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserOneId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserTwoId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArtworkListingId");
+
+                    b.HasIndex("UserTwoId");
+
+                    b.HasIndex("UserOneId", "UserTwoId")
+                        .IsUnique()
+                        .HasFilter("\"ArtworkListingId\" IS NULL");
+
+                    b.HasIndex("UserOneId", "UserTwoId", "ArtworkListingId")
+                        .IsUnique()
+                        .HasFilter("\"ArtworkListingId\" IS NOT NULL");
+
+                    b.ToTable("Conversations", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Conversations_ParticipantsOrder", "\"UserOneId\" < \"UserTwoId\"");
+                        });
+                });
+
             modelBuilder.Entity("ARTISTO.Models.Offer", b =>
                 {
                     b.Property<int>("Id")
@@ -358,6 +435,51 @@ namespace ARTISTO.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.ChatMessage", b =>
+                {
+                    b.HasOne("ARTISTO.Models.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.Conversation", b =>
+                {
+                    b.HasOne("ARTISTO.Models.ArtworkListing", "ArtworkListing")
+                        .WithMany()
+                        .HasForeignKey("ArtworkListingId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ARTISTO.Models.User", "UserOne")
+                        .WithMany()
+                        .HasForeignKey("UserOneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ARTISTO.Models.User", "UserTwo")
+                        .WithMany()
+                        .HasForeignKey("UserTwoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ArtworkListing");
+
+                    b.Navigation("UserOne");
+
+                    b.Navigation("UserTwo");
+                });
+
             modelBuilder.Entity("ARTISTO.Models.Offer", b =>
                 {
                     b.HasOne("ARTISTO.Models.ArtworkListing", "ArtworkListing")
@@ -459,6 +581,11 @@ namespace ARTISTO.Migrations
                         .HasForeignKey("FollowerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("ARTISTO.Models.User", b =>
