@@ -6,7 +6,10 @@ namespace ARTISTO.Models;
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum OfferStatus
 {
-    Pending
+    Pending = 0,
+    Accepted = 1,
+    Declined = 2,
+    Countered = 3
 }
 
 public class Offer
@@ -31,5 +34,17 @@ public class Offer
 
     public OfferStatus Status { get; set; } = OfferStatus.Pending;
 
+    [Range(typeof(decimal), "0.01", "1000000")]
+    public decimal? CounterAmount { get; set; }
+
+    [MaxLength(1000)]
+    public string? CounterMessage { get; set; }
+
+    public int? OrderId { get; set; }
+
+    [JsonIgnore]
+    public Order? Order { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+    
+    public DateTime? RespondedAtUtc { get; set; }
 }

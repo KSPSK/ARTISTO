@@ -23,12 +23,18 @@ public class ArtistoDbContext : DbContext
     {
         modelBuilder.Entity<Offer>(entity =>
         {
-            entity.ToTable("Offers", t => t.HasCheckConstraint("CK_Offers_Amount", "CAST(\"Amount\" AS numeric) BETWEEN 0.01 AND 1000000"));
+            entity.ToTable("Offers", t =>
+            {
+                t.HasCheckConstraint("CK_Offers_Amount", "CAST(\"Amount\" AS numeric) BETWEEN 0.01 AND 1000000");
+                t.HasCheckConstraint("CK_Offers_CounterAmount", "\"CounterAmount\" IS NULL OR CAST(\"CounterAmount\" AS numeric) BETWEEN 0.01 AND 1000000");
+            });
             entity.Property(x => x.Amount).HasPrecision(9, 2);
+            entity.Property(x => x.CounterAmount).HasPrecision(9, 2);
             entity.HasIndex(x => new { x.BuyerId, x.ArtworkListingId }).IsUnique().HasFilter("\"Status\" = 0");
             entity.HasIndex(x => x.ArtworkListingId);
             entity.HasOne(x => x.Buyer).WithMany().HasForeignKey(x => x.BuyerId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.ArtworkListing).WithMany().HasForeignKey(x => x.ArtworkListingId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(x => x.Order).WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Review>(entity =>
