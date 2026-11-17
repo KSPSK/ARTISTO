@@ -4,6 +4,7 @@ import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 import "./CreatorProfile.css";
 import StartChatButton from "./StartChatButton";
+import CreatorReviews from "./CreatorReviews";
 
 const connectionsPageSize = 20;
 const connectionLabels = {
@@ -368,6 +369,8 @@ export default function CreatorProfile() {
 
       <StartChatButton key={user.id} participantId={user.id} />
       
+      <CreatorReviews key={user.id} sellerId={user.id} />
+
       <h2>Listings</h2>
       {listings.length === 0 ? (
         <p>No listings yet.</p>

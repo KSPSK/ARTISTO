@@ -4,6 +4,7 @@ import { useAuth } from "../AuthContext";
 import { ListingImage } from "./ListingImage";
 import "./OrderDetails.css";
 import StartChatButton from "./StartChatButton";
+import ReviewForm from "./ReviewForm";
 
 const statusLabels = {
   Pending: "Pending",
@@ -362,6 +363,9 @@ export default function OrderDetails() {
           )}
         </div>
       </div>
+      {isBuyer && order.status === "Completed" && (
+      <ReviewForm key={order.id} order={order} />
+      )}
     </main>
   );
 }
