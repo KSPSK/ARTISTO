@@ -3,6 +3,7 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { ListingImage } from "./ListingImage";
 import "./OrderDetails.css";
+import StartChatButton from "./StartChatButton";
 
 const statusLabels = {
   Pending: "Pending",
@@ -232,6 +233,12 @@ export default function OrderDetails() {
               </div>
             )}
           </dl>
+          
+          <StartChatButton
+            key={`${order.id}-${otherParty.id}`}
+            participantId={otherParty.id}
+            artworkListingId={order.artworkListingId}
+          />
 
           <h3>Timeline</h3>
           <ul className="order-details-timeline">

@@ -11,6 +11,7 @@ import MyOrders from "./components/MyOrders";
 import MyOffers from "./components/MyOffers";
 import OrderDetails from "./components/OrderDetails";
 import Favorites from "./components/Favorites";
+import { Conversations, Conversation } from "./components/Chat";
 
 const AppRoutes = [
   {
@@ -68,6 +69,14 @@ const AppRoutes = [
   {
     path: "/users/:id",
     element: <CreatorProfile />
+  },
+  {
+  path: "/messages",
+  element: <Conversations />
+  },
+  {
+  path: "/messages/:id",
+  element: <Conversation />
   }
 ];
 

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import { useAuth } from "../AuthContext";
 import "./CreatorProfile.css";
+import StartChatButton from "./StartChatButton";
 
 const connectionsPageSize = 20;
 const connectionLabels = {
@@ -365,6 +366,8 @@ export default function CreatorProfile() {
         </Link>
       )}
 
+      <StartChatButton key={user.id} participantId={user.id} />
+      
       <h2>Listings</h2>
       {listings.length === 0 ? (
         <p>No listings yet.</p>
