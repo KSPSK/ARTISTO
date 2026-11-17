@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit;
+using ARTISTO.Services;
 
 namespace ARTISTO.Tests;
 
@@ -52,8 +53,8 @@ public class OfferResponseTests
         await app.Seed();
         using var seller = app.Client();
         using var buyer = app.Client();
-        await app.Register(seller);
-        await app.Register(buyer);
+        var sellerId = await app.Register(seller);
+        var buyerId = await app.Register(buyer);
         var listingId = await CreateListing(seller);
         var offerId = await MakeOffer(buyer, listingId, 60);
 
@@ -70,6 +71,8 @@ public class OfferResponseTests
 
         var listing = await Json(await buyer.GetAsync($"/api/artworklistings/{listingId}"));
         Assert.Equal("Reserved", listing.GetProperty("status").GetString());
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OfferReceived);
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == buyerId && n.Type == NotificationType.OfferAccepted);
     }
 
     [Fact]
@@ -99,7 +102,7 @@ public class OfferResponseTests
         using var seller = app.Client();
         using var buyer = app.Client();
         await app.Register(seller);
-        await app.Register(buyer);
+        var buyerId = await app.Register(buyer);
         var listingId = await CreateListing(seller);
         var offerId = await MakeOffer(buyer, listingId, 60);
 
@@ -109,6 +112,7 @@ public class OfferResponseTests
         Assert.Equal("Declined", (await Json(response)).GetProperty("status").GetString());
         var listing = await Json(await buyer.GetAsync($"/api/artworklistings/{listingId}"));
         Assert.Equal("Available", listing.GetProperty("status").GetString());
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == buyerId && n.Type == NotificationType.OfferDeclined);
     }
 
     [Fact]
@@ -118,8 +122,8 @@ public class OfferResponseTests
         await app.Seed();
         using var seller = app.Client();
         using var buyer = app.Client();
-        await app.Register(seller);
-        await app.Register(buyer);
+        var sellerId = await app.Register(seller);
+        var buyerId = await app.Register(buyer);
         var offerId = await MakeOffer(buyer, await CreateListing(seller), 60);
 
         var countered = await Counter(seller, offerId, 80, "  Lowest I can go.  ");
@@ -129,6 +133,7 @@ public class OfferResponseTests
         Assert.Equal("Countered", counterBody.GetProperty("status").GetString());
         Assert.Equal(80m, counterBody.GetProperty("counterAmount").GetDecimal());
         Assert.Equal("Lowest I can go.", counterBody.GetProperty("counterMessage").GetString());
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == buyerId && n.Type == NotificationType.OfferCountered);
 
         Assert.Equal(HttpStatusCode.Forbidden, (await Respond(seller, offerId, "accept")).StatusCode);
 
@@ -138,6 +143,7 @@ public class OfferResponseTests
         var orderId = (await Json(accepted)).GetProperty("orderId").GetInt32();
         var order = await Json(await seller.GetAsync($"/api/orders/{orderId}"));
         Assert.Equal(80m, order.GetProperty("price").GetDecimal());
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OfferAccepted);
     }
 
     [Fact]
@@ -147,7 +153,7 @@ public class OfferResponseTests
         await app.Seed();
         using var seller = app.Client();
         using var buyer = app.Client();
-        await app.Register(seller);
+        var sellerId = await app.Register(seller);
         await app.Register(buyer);
         var offerId = await MakeOffer(buyer, await CreateListing(seller), 60);
         Assert.Equal(HttpStatusCode.OK, (await Counter(seller, offerId, 80)).StatusCode);
@@ -156,6 +162,7 @@ public class OfferResponseTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("Declined", (await Json(response)).GetProperty("status").GetString());
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OfferDeclined);
     }
 
     [Theory]
@@ -204,7 +211,7 @@ public class OfferResponseTests
         using var firstBuyer = app.Client();
         using var secondBuyer = app.Client();
         await app.Register(seller);
-        await app.Register(firstBuyer);
+        var firstBuyerId = await app.Register(firstBuyer);
         await app.Register(secondBuyer);
         var listingId = await CreateListing(seller);
         var firstOfferId = await MakeOffer(firstBuyer, listingId, 60);
@@ -214,6 +221,7 @@ public class OfferResponseTests
 
         var firstOffer = await Json(await firstBuyer.GetAsync($"/api/offers/{firstOfferId}"));
         Assert.Equal("Declined", firstOffer.GetProperty("status").GetString());
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == firstBuyerId && n.Type == NotificationType.OfferDeclined);
     }
 
     [Fact]
@@ -238,5 +246,30 @@ public class OfferResponseTests
         Assert.Empty(strangers.EnumerateArray());
         Assert.Equal(HttpStatusCode.Forbidden, (await stranger.GetAsync($"/api/offers/{offerId}")).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await buyer.GetAsync("/api/offers?role=admin")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Order_events_notify_the_other_party()
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var seller = app.Client();
+        using var buyer = app.Client();
+        var sellerId = await app.Register(seller);
+        var buyerId = await app.Register(buyer);
+
+        var placed = await buyer.PostAsJsonAsync("/api/orders", new { artworkListingId = await CreateListing(seller) });
+        var orderId = (await Json(placed)).GetProperty("id").GetInt32();
+        Assert.Equal(HttpStatusCode.OK, (await seller.PostAsync($"/api/orders/{orderId}/handover", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await buyer.PostAsync($"/api/orders/{orderId}/complete", null)).StatusCode);
+
+        var cancelled = await buyer.PostAsJsonAsync("/api/orders", new { artworkListingId = await CreateListing(seller) });
+        var cancelledId = (await Json(cancelled)).GetProperty("id").GetInt32();
+        Assert.Equal(HttpStatusCode.OK, (await buyer.PostAsJsonAsync($"/api/orders/{cancelledId}/cancel", new { reason = "Changed my mind" })).StatusCode);
+
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OrderPlaced);
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == buyerId && n.Type == NotificationType.OrderHandedOver);
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OrderCompleted);
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OrderCancelled);
     }
 }

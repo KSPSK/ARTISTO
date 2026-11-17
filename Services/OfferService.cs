@@ -3,7 +3,10 @@ using ARTISTO.Models;
 
 namespace ARTISTO.Services;
 
-public class OfferService(IOfferRepository offers, IOrderService orders) : IOfferService
+public class OfferService(
+    IOfferRepository offers,
+    IOrderService orders,
+    INotificationService notifications) : IOfferService
 {
     public async Task<ServiceResult<List<OfferResponse>>> GetMyOffersAsync(int userId, string? role)
     {
@@ -73,6 +76,15 @@ public class OfferService(IOfferRepository offers, IOrderService orders) : IOffe
 
         var response = ToResponse(created);
 
+        if (response.SellerId is int sellerId)
+        {
+            await notifications.NotifyAsync(
+                sellerId,
+                NotificationType.OfferReceived,
+                $"{response.BuyerDisplayName} offered {response.Amount} EUR for \"{response.ArtworkTitle}\".",
+                "/offers");
+        }
+
         return ServiceResult<OfferResponse>.Success(response);
     }
 
@@ -132,6 +144,25 @@ public class OfferService(IOfferRepository offers, IOrderService orders) : IOffe
 
         await offers.SaveChangesAsync();
 
+        var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
+        if (otherPartyId is int notifyUserId)
+        {
+            await notifications.NotifyAsync(
+                notifyUserId,
+                NotificationType.OfferAccepted,
+                $"The offer for \"{offer.ArtworkListing?.Title}\" was accepted. An order for {agreedPrice} EUR was created.",
+                $"/orders/{offer.OrderId}");
+        }
+
+        foreach (var other in otherOffers)
+        {
+            await notifications.NotifyAsync(
+                other.BuyerId,
+                NotificationType.OfferDeclined,
+                $"Your offer for \"{offer.ArtworkListing?.Title}\" was declined because the artwork was sold to another buyer.",
+                "/offers");
+        }
+
         return ServiceResult<OfferResponse>.Success(ToResponse(offer));
     }
 
@@ -168,6 +199,16 @@ public class OfferService(IOfferRepository offers, IOrderService orders) : IOffe
         offer.Status = OfferStatus.Declined;
         offer.RespondedAtUtc = DateTime.UtcNow;
         await offers.SaveChangesAsync();
+
+        var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
+        if (otherPartyId is int notifyUserId)
+        {
+            await notifications.NotifyAsync(
+                notifyUserId,
+                NotificationType.OfferDeclined,
+                $"The offer for \"{offer.ArtworkListing?.Title}\" was declined.",
+                "/offers");
+        }
 
         return ServiceResult<OfferResponse>.Success(ToResponse(offer));
     }
@@ -216,6 +257,12 @@ public class OfferService(IOfferRepository offers, IOrderService orders) : IOffe
         offer.CounterMessage = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim();
         offer.RespondedAtUtc = DateTime.UtcNow;
         await offers.SaveChangesAsync();
+
+        await notifications.NotifyAsync(
+            offer.BuyerId,
+            NotificationType.OfferCountered,
+            $"The seller countered your offer for \"{listing.Title}\" with {request.Amount} EUR.",
+            "/offers");
 
         return ServiceResult<OfferResponse>.Success(ToResponse(offer));
     }

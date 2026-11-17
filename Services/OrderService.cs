@@ -7,10 +7,12 @@ namespace ARTISTO.Services;
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly INotificationService _notificationService;
 
-    public OrderService(IOrderRepository orderRepository)
+    public OrderService(IOrderRepository orderRepository, INotificationService notificationService)
     {
         _orderRepository = orderRepository;
+        _notificationService = notificationService;
     }
 
     public async Task<ServiceResult<List<OrderResponse>>> GetMyOrdersAsync(int userId, string? role)
@@ -44,9 +46,21 @@ public class OrderService : IOrderService
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
-    public Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
+    public async Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
     {
-        return PlaceOrderAsync(request.ArtworkListingId, buyerId, agreedPrice: null, request.PickupNotes);
+        var result = await PlaceOrderAsync(request.ArtworkListingId, buyerId, agreedPrice: null, request.PickupNotes);
+
+        if (result.IsSuccess)
+        {
+            var order = result.Value!;
+            await _notificationService.NotifyAsync(
+                order.SellerId,
+                NotificationType.OrderPlaced,
+                $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
+                $"/orders/{order.Id}");
+        }
+
+        return result;
     }
 
     public Task<ServiceResult<OrderResponse>> CreateOrderFromOfferAsync(int listingId, int buyerId, decimal agreedPrice)
@@ -152,6 +166,12 @@ public class OrderService : IOrderService
         order.HandedOverAtUtc = DateTime.UtcNow;
 
         await _orderRepository.SaveChangesAsync();
+
+        await _notificationService.NotifyAsync(
+            order.BuyerId,
+            NotificationType.OrderHandedOver,
+            $"\"{order.ArtworkListing?.Title}\" was handed over. Please confirm that you received it.",
+            $"/orders/{order.Id}");
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
@@ -183,6 +203,13 @@ public class OrderService : IOrderService
         }
 
         await _orderRepository.SaveChangesAsync();
+
+        await _notificationService.NotifyAsync(
+            order.SellerId,
+            NotificationType.OrderCompleted,
+            $"{order.Buyer?.DisplayName} confirmed receipt of \"{order.ArtworkListing?.Title}\". The order is completed.",
+            $"/orders/{order.Id}");
+
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
@@ -217,6 +244,13 @@ public class OrderService : IOrderService
         }
 
         await _orderRepository.SaveChangesAsync();
+
+        var otherPartyId = userId == order.BuyerId ? order.SellerId : order.BuyerId;
+        await _notificationService.NotifyAsync(
+            otherPartyId,
+            NotificationType.OrderCancelled,
+            $"The order for \"{order.ArtworkListing?.Title}\" was cancelled.",
+            $"/orders/{order.Id}");
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
