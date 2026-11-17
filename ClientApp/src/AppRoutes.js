@@ -8,6 +8,7 @@ import Account from "./components/Account";
 import CreatorProfile from "./components/CreatorProfile";
 import CreatorProfileForm from "./components/CreatorProfileForm";
 import MyOrders from "./components/MyOrders";
+import MyOffers from "./components/MyOffers";
 import OrderDetails from "./components/OrderDetails";
 import Favorites from "./components/Favorites";
 
@@ -47,6 +48,10 @@ const AppRoutes = [
   {
     path: "/orders/:id",
     element: <OrderDetails />
+  },
+    {
+    path: "/offers",
+    element: <MyOffers />
   },
   {
     path: "/login",
