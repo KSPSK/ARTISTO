@@ -71,7 +71,6 @@ public class OfferResponseTests
 
         var listing = await Json(await buyer.GetAsync($"/api/artworklistings/{listingId}"));
         Assert.Equal("Reserved", listing.GetProperty("status").GetString());
-        
         Assert.Contains(app.Notifications.Sent, n => n.UserId == sellerId && n.Type == NotificationType.OfferReceived);
         Assert.Contains(app.Notifications.Sent, n => n.UserId == buyerId && n.Type == NotificationType.OfferAccepted);
     }

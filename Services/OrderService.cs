@@ -167,13 +167,11 @@ public class OrderService : IOrderService
 
         await _orderRepository.SaveChangesAsync();
 
-        
         await _notificationService.NotifyAsync(
             order.BuyerId,
             NotificationType.OrderHandedOver,
             $"\"{order.ArtworkListing?.Title}\" was handed over. Please confirm that you received it.",
             $"/orders/{order.Id}");
-        
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
@@ -247,14 +245,12 @@ public class OrderService : IOrderService
 
         await _orderRepository.SaveChangesAsync();
 
-        
         var otherPartyId = userId == order.BuyerId ? order.SellerId : order.BuyerId;
         await _notificationService.NotifyAsync(
             otherPartyId,
             NotificationType.OrderCancelled,
             $"The order for \"{order.ArtworkListing?.Title}\" was cancelled.",
             $"/orders/{order.Id}");
-        
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
