@@ -7,10 +7,12 @@ namespace ARTISTO.Services;
 public class ReviewService : IReviewService
 {
     private readonly IReviewRepository _reviewRepository;
+    private readonly IOrderRepository _orderRepository;
 
-    public ReviewService(IReviewRepository reviewRepository)
+    public ReviewService(IReviewRepository reviewRepository, IOrderRepository orderRepository)
     {
         _reviewRepository = reviewRepository;
+        _orderRepository = orderRepository;
     }
 
     public async Task<ServiceResult<ReviewResponse>> CreateReviewAsync(CreateReviewRequest request, int reviewerId)
@@ -88,12 +90,14 @@ public class ReviewService : IReviewService
         }
 
         var reviews = await _reviewRepository.GetForSellerAsync(sellerId);
+        var completedSalesCount = await _orderRepository.CountCompletedSalesAsync(sellerId);
 
         return ServiceResult<SellerReviewsResponse>.Success(new SellerReviewsResponse
         {
             SellerId = sellerId,
             AverageRating = reviews.Count == 0 ? null : Math.Round(reviews.Average(r => r.Rating), 1),
             ReviewCount = reviews.Count,
+            CompletedSalesCount = completedSalesCount,
             Reviews = reviews.Select(ToResponse).ToList()
         });
     }
