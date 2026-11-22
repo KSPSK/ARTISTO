@@ -113,7 +113,7 @@ public class OrdersController : ControllerBase
             ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
             ServiceStatus.Forbidden => Forbid(),
             ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
-            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)), 
+            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
