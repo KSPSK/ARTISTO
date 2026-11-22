@@ -99,8 +99,9 @@ export default function CreatorProfileForm() {
         }
 
         const body = await response.json().catch(() => null);
-        const message = body?.message
-          || (body?.errors ? Object.values(body.errors).flat().join(" ") : "");
+        const message =
+          body?.message ||
+          (body?.errors ? Object.values(body.errors).flat().join(" ") : "");
         setError(message || "Unable to save the profile. Please try again.");
         return;
       }
@@ -127,7 +128,11 @@ export default function CreatorProfileForm() {
   }
 
   if (authLoading) {
-    return <p className="profile-gate" role="status">Checking your session...</p>;
+    return (
+      <p className="profile-gate" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   if (!currentUser) {
@@ -138,7 +143,9 @@ export default function CreatorProfileForm() {
           You must be logged in to edit a profile.
         </p>
         <div className="profile-gate-actions">
-          <Link to="/login" className="btn btn-primary">Log in</Link>
+          <Link to="/login" className="btn btn-primary">
+            Log in
+          </Link>
         </div>
       </main>
     );
@@ -175,7 +182,9 @@ export default function CreatorProfileForm() {
   return (
     <main className="profile-form">
       <h1>Edit profile</h1>
-      <p className="profile-form-lead">Update the display name, city, and description.</p>
+      <p className="profile-form-lead">
+        Update the display name, city, and description.
+      </p>
 
       {error && (
         <div className="alert alert-danger" role="alert">
@@ -186,7 +195,9 @@ export default function CreatorProfileForm() {
       <form onSubmit={handleSubmit}>
         <fieldset disabled={isSaving}>
           <div className="mb-3">
-            <label htmlFor="displayName" className="form-label">Display name</label>
+            <label htmlFor="displayName" className="form-label">
+              Display name
+            </label>
             <input
               id="displayName"
               name="displayName"
@@ -199,7 +210,9 @@ export default function CreatorProfileForm() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="city" className="form-label">City</label>
+            <label htmlFor="city" className="form-label">
+              City
+            </label>
             <input
               id="city"
               name="city"
@@ -212,7 +225,9 @@ export default function CreatorProfileForm() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="description" className="form-label">Description</label>
+            <label htmlFor="description" className="form-label">
+              Description
+            </label>
             <textarea
               id="description"
               name="description"

@@ -4,18 +4,21 @@ import { useApiData } from "../useApiData";
 import "./Reviews.css";
 
 export default function CreatorReviews({ sellerId }) {
-  const { data, error, reload } = useApiData(
-    `/api/users/${sellerId}/reviews`
-  );
+  const { data, error, reload } = useApiData(`/api/users/${sellerId}/reviews`);
 
   return (
-    <section className="reviews-section my-4" aria-label="Reviews and reputation">
+    <section
+      className="reviews-section my-4"
+      aria-label="Reviews and reputation"
+    >
       <h2>Reviews and reputation</h2>
 
       {error && (
         <div role="alert">
           <p>{error}</p>
-          <button type="button" className="btn btn-primary" onClick={reload}>Try again</button>
+          <button type="button" className="btn btn-primary" onClick={reload}>
+            Try again
+          </button>
         </div>
       )}
 
@@ -63,10 +66,12 @@ export default function CreatorReviews({ sellerId }) {
                   </small>
 
                   {review.comment && (
-                    <p style={{
-                      whiteSpace: "pre-wrap",
-                      overflowWrap: "anywhere",
-                    }}>
+                    <p
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                      }}
+                    >
                       {review.comment}
                     </p>
                   )}

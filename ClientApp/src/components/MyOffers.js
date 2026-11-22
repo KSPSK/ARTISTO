@@ -71,7 +71,10 @@ function OfferItem({ offer, role, onChanged }) {
     <li className="my-offers-item">
       <div className="my-offers-row">
         <div>
-          <Link to={`/listings/${offer.artworkListingId}`} className="my-offers-title">
+          <Link
+            to={`/listings/${offer.artworkListingId}`}
+            className="my-offers-title"
+          >
             {offer.artworkTitle}
           </Link>
           <p className="my-offers-meta">
@@ -94,9 +97,7 @@ function OfferItem({ offer, role, onChanged }) {
         </div>
       </div>
 
-      {offer.message && (
-        <p className="my-offers-message">"{offer.message}"</p>
-      )}
+      {offer.message && <p className="my-offers-message">"{offer.message}"</p>}
 
       {offer.counterAmount != null && (
         <p className="my-offers-counter">
@@ -106,7 +107,10 @@ function OfferItem({ offer, role, onChanged }) {
       )}
 
       {offer.status === "Accepted" && offer.orderId && (
-        <Link className="btn btn-outline-primary btn-sm" to={`/orders/${offer.orderId}`}>
+        <Link
+          className="btn btn-outline-primary btn-sm"
+          to={`/orders/${offer.orderId}`}
+        >
           View order
         </Link>
       )}
@@ -154,7 +158,9 @@ function OfferItem({ offer, role, onChanged }) {
             value={counterAmount}
             onChange={(event) => setCounterAmount(event.target.value)}
           />
-          <label htmlFor={`counter-message-${offer.id}`}>Message (optional)</label>
+          <label htmlFor={`counter-message-${offer.id}`}>
+            Message (optional)
+          </label>
           <textarea
             id={`counter-message-${offer.id}`}
             className="form-control"
@@ -164,7 +170,11 @@ function OfferItem({ offer, role, onChanged }) {
             onChange={(event) => setCounterMessage(event.target.value)}
           />
           <div className="my-offers-actions">
-            <button type="submit" className="btn btn-primary btn-sm" disabled={isWorking}>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              disabled={isWorking}
+            >
               Send counter-offer
             </button>
             <button
@@ -201,7 +211,9 @@ function OfferItem({ offer, role, onChanged }) {
       )}
 
       {error && (
-        <p className="my-offers-error" role="alert">{error}</p>
+        <p className="my-offers-error" role="alert">
+          {error}
+        </p>
       )}
     </li>
   );
@@ -255,7 +267,11 @@ export default function MyOffers() {
   }
 
   if (authLoading) {
-    return <p className="my-offers" role="status">Checking your session...</p>;
+    return (
+      <p className="my-offers" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   if (!user) {
@@ -263,7 +279,9 @@ export default function MyOffers() {
       <main className="my-offers">
         <h1>My offers</h1>
         <p className="my-offers-lead">Log in to see your offers.</p>
-        <Link className="btn btn-primary" to="/login">Log in</Link>
+        <Link className="btn btn-primary" to="/login">
+          Log in
+        </Link>
       </main>
     );
   }

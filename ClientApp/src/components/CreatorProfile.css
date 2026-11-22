@@ -146,7 +146,9 @@
 
 .creator-profile .btn:focus,
 .creator-profile .btn:active:focus {
-  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+  box-shadow:
+    0 0 0 0.1rem #ffffff,
+    0 0 0 0.25rem #000000;
 }
 
 .creator-profile a:not(.btn) {

@@ -8,11 +8,13 @@ a {
 .btn-link.nav-link:focus,
 .form-control:focus,
 .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+  box-shadow:
+    0 0 0 0.1rem white,
+    0 0 0 0.25rem #258cfb;
 }
 
 code {
-  color: #E01A76;
+  color: #e01a76;
 }
 
 .btn-primary {
@@ -161,7 +163,7 @@ code {
   margin-bottom: 28px;
 }
 
-.listing-details-info>div {
+.listing-details-info > div {
   display: grid;
   grid-template-columns: 120px minmax(0, 1fr);
   gap: 16px;

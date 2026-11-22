@@ -75,9 +75,7 @@ export function Home() {
 
       <h2>Featured listings</h2>
 
-      {status === "loading" && (
-        <p role="status">Listings are loading...</p>
-      )}
+      {status === "loading" && <p role="status">Listings are loading...</p>}
 
       {status === "error" && (
         <div>
@@ -96,8 +94,8 @@ export function Home() {
 
       {status === "ready" && featured.length === 0 && (
         <p>
-          No listings yet.{" "}
-          <Link to="/listings/new">Sell your art</Link> to add the first one.
+          No listings yet. <Link to="/listings/new">Sell your art</Link> to add
+          the first one.
         </p>
       )}
 
@@ -106,11 +104,16 @@ export function Home() {
           <div className="artwork-grid">
             {featured.map((listing) => (
               <div className="artwork-card" key={listing.id}>
-                <ListingImage imageUrl={listing.imageUrl} title={listing.title} />
+                <ListingImage
+                  imageUrl={listing.imageUrl}
+                  title={listing.title}
+                />
                 <h3 className="artwork-title">{listing.title}</h3>
                 <p className="artwork-creator">
                   {listing.userId ? (
-                    <Link to={`/users/${listing.userId}`}>{listing.creatorName}</Link>
+                    <Link to={`/users/${listing.userId}`}>
+                      {listing.creatorName}
+                    </Link>
                   ) : (
                     listing.creatorName
                   )}

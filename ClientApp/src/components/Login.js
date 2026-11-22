@@ -61,19 +61,17 @@ export default function Login() {
   }
 
   if (authLoading) {
-    return <p className="py-4" role="status">Checking your session...</p>;
+    return (
+      <p className="py-4" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   return (
     <section className="login-page">
-      <img
-      src={logo}
-      alt="ARTISTO"
-      className="login-logo"
-      />
-      <p className="text-muted mb-4">
-        LOG IN TO YOUR ARTISTO ACCOUNT.
-      </p>
+      <img src={logo} alt="ARTISTO" className="login-logo" />
+      <p className="text-muted mb-4">LOG IN TO YOUR ARTISTO ACCOUNT.</p>
 
       {error && (
         <div className="alert alert-danger" role="alert">
@@ -120,10 +118,7 @@ export default function Login() {
             />
           </div>
 
-          <button
-            type="submit"
-            className="btn btn-primary w-100"
-          >
+          <button type="submit" className="btn btn-primary w-100">
             {isLoading ? "Logging in..." : "LOG IN"}
           </button>
         </fieldset>

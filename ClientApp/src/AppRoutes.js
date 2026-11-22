@@ -16,68 +16,68 @@ import { Conversations, Conversation } from "./components/Chat";
 const AppRoutes = [
   {
     index: true,
-    element: <Home />
+    element: <Home />,
   },
   {
     path: "/artworklistings",
-    element: <ArtworkListings />
+    element: <ArtworkListings />,
   },
   {
     path: "/listings/new",
-    element: <ArtworkListingForm />
+    element: <ArtworkListingForm />,
   },
   {
     path: "/listings/:id/edit",
-    element: <ArtworkListingForm />
+    element: <ArtworkListingForm />,
   },
   {
     path: "/listings/:id",
-    element: <ArtworkListingDetails />
+    element: <ArtworkListingDetails />,
   },
   {
     path: "/account",
-    element: <Account />
+    element: <Account />,
   },
   {
-  path: "/favorites",
-  element: <Favorites />
+    path: "/favorites",
+    element: <Favorites />,
   },
   {
     path: "/orders",
-    element: <MyOrders />
+    element: <MyOrders />,
   },
   {
     path: "/orders/:id",
-    element: <OrderDetails />
+    element: <OrderDetails />,
   },
-    {
+  {
     path: "/offers",
-    element: <MyOffers />
+    element: <MyOffers />,
   },
   {
     path: "/login",
-    element: <Login />
+    element: <Login />,
   },
   {
     path: "/register",
-    element: <Register />
+    element: <Register />,
   },
   {
     path: "/users/:id/edit",
-    element: <CreatorProfileForm />
+    element: <CreatorProfileForm />,
   },
   {
     path: "/users/:id",
-    element: <CreatorProfile />
+    element: <CreatorProfile />,
   },
   {
-  path: "/messages",
-  element: <Conversations />
+    path: "/messages",
+    element: <Conversations />,
   },
   {
-  path: "/messages/:id",
-  element: <Conversation />
-  }
+    path: "/messages/:id",
+    element: <Conversation />,
+  },
 ];
 
 export default AppRoutes;

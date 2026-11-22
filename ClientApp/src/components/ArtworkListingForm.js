@@ -47,7 +47,9 @@ export default function ArtworkListingForm() {
   const [previewUrl, setPreviewUrl] = useState("");
   const [currentImageUrl, setCurrentImageUrl] = useState("");
   const [removeCurrentImage, setRemoveCurrentImage] = useState(false);
-  const [imageError, setImageError] = useState(location.state?.imageError || "");
+  const [imageError, setImageError] = useState(
+    location.state?.imageError || ""
+  );
   const [isUploading, setIsUploading] = useState(false);
 
   // Load the selected listing when the component mounts or when the id changes
@@ -107,9 +109,7 @@ export default function ArtworkListingForm() {
       } catch (err) {
         if (controller.signal.aborted) return;
 
-        setLoadError(
-          err.message || "Failed to connect to the server."
-        );
+        setLoadError(err.message || "Failed to connect to the server.");
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false);
@@ -286,18 +286,27 @@ export default function ArtworkListingForm() {
         setIsUploading(true);
         const imageBody = new FormData();
         imageBody.append("image", selectedImage);
-        const imageResponse = await fetch(`/api/artworklistings/${saved.id}/image`, {
-          method: "POST",
-          body: imageBody,
-        });
+        const imageResponse = await fetch(
+          `/api/artworklistings/${saved.id}/image`,
+          {
+            method: "POST",
+            body: imageBody,
+          }
+        );
 
         if (!imageResponse.ok) {
           const problem = await imageResponse.json().catch(() => null);
-          const message = problem?.message || "The listing was saved, but the image was not uploaded.";
+          const message =
+            problem?.message ||
+            "The listing was saved, but the image was not uploaded.";
           if (!id) {
             navigate(`/listings/${saved.id}/edit`, {
               replace: true,
-              state: { imageError: message, fromSearch, listingsPath: location.state?.listingsPath },
+              state: {
+                imageError: message,
+                fromSearch,
+                listingsPath: location.state?.listingsPath,
+              },
             });
           } else {
             setImageError(message);
@@ -305,20 +314,23 @@ export default function ArtworkListingForm() {
           return;
         }
       } else if (removeCurrentImage && currentImageUrl) {
-        const imageResponse = await fetch(`/api/artworklistings/${saved.id}/image`, {
-          method: "DELETE",
-        });
+        const imageResponse = await fetch(
+          `/api/artworklistings/${saved.id}/image`,
+          {
+            method: "DELETE",
+          }
+        );
         if (!imageResponse.ok && imageResponse.status !== 204) {
-          setImageError("The listing was saved, but the image was not removed.");
+          setImageError(
+            "The listing was saved, but the image was not removed."
+          );
           return;
         }
       }
 
       navigate(`/listings/${saved.id}`, {
         state: {
-          message: listingId
-            ? "Listing updated."
-            : "Listing created.",
+          message: listingId ? "Listing updated." : "Listing created.",
           fromSearch,
           listingsPath: location.state?.listingsPath,
         },
@@ -347,7 +359,11 @@ export default function ArtworkListingForm() {
   }
 
   if (authLoading) {
-    return <p className="listing-gate" role="status">Checking your session...</p>;
+    return (
+      <p className="listing-gate" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   if (!user) {
@@ -358,7 +374,9 @@ export default function ArtworkListingForm() {
           You must be logged in to create or edit a listing.
         </p>
         <div className="listing-gate-actions">
-          <Link to="/login" className="btn btn-primary">Log in</Link>
+          <Link to="/login" className="btn btn-primary">
+            Log in
+          </Link>
         </div>
       </main>
     );
@@ -395,7 +413,9 @@ export default function ArtworkListingForm() {
     return (
       <main className="listing-gate">
         <h1>Edit listing</h1>
-        <p className="listing-gate-lead">You can only edit your own listings.</p>
+        <p className="listing-gate-lead">
+          You can only edit your own listings.
+        </p>
         <div className="listing-gate-actions">
           <Link to={`/listings/${id}`} className="btn btn-primary">
             Back to listing
@@ -407,9 +427,7 @@ export default function ArtworkListingForm() {
 
   return (
     <main className="listing-form">
-      <h1>
-        {isEditing ? "Edit listing" : "Create listing"}
-      </h1>
+      <h1>{isEditing ? "Edit listing" : "Create listing"}</h1>
 
       <p className="listing-form-lead">
         {isEditing
@@ -522,10 +540,7 @@ export default function ArtworkListingForm() {
               checked={form.localPickupAvailable}
               onChange={handleChange}
             />
-            <label
-              htmlFor="localPickupAvailable"
-              className="form-check-label"
-            >
+            <label htmlFor="localPickupAvailable" className="form-check-label">
               Local Pickup Available
             </label>
           </div>
@@ -542,12 +557,22 @@ export default function ArtworkListingForm() {
               className="form-control"
               onChange={handleImageChange}
             />
-            <div className="form-text">Optional. JPEG, PNG, or WebP, up to 5 MB.</div>
+            <div className="form-text">
+              Optional. JPEG, PNG, or WebP, up to 5 MB.
+            </div>
             {previewUrl && (
-              <img className="listing-image-preview" src={previewUrl} alt="Selected artwork" />
+              <img
+                className="listing-image-preview"
+                src={previewUrl}
+                alt="Selected artwork"
+              />
             )}
             {!previewUrl && currentImageUrl && !removeCurrentImage && (
-              <img className="listing-image-preview" src={currentImageUrl} alt="Current artwork" />
+              <img
+                className="listing-image-preview"
+                src={currentImageUrl}
+                alt="Current artwork"
+              />
             )}
             {currentImageUrl && !selectedImage && (
               <div className="form-check mt-2">
@@ -556,9 +581,14 @@ export default function ArtworkListingForm() {
                   type="checkbox"
                   className="form-check-input"
                   checked={removeCurrentImage}
-                  onChange={(event) => setRemoveCurrentImage(event.target.checked)}
+                  onChange={(event) =>
+                    setRemoveCurrentImage(event.target.checked)
+                  }
                 />
-                <label htmlFor="removeCurrentImage" className="form-check-label">
+                <label
+                  htmlFor="removeCurrentImage"
+                  className="form-check-label"
+                >
                   Remove current image
                 </label>
               </div>

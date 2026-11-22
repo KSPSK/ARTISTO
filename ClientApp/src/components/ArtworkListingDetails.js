@@ -230,8 +230,7 @@ export default function ArtworkListingDetails() {
     currency: "EUR",
   }).format(listing.price);
   const isOwner =
-    listing.userId != null &&
-    String(listing.userId) === String(user?.id);
+    listing.userId != null && String(listing.userId) === String(user?.id);
 
   const canBuy =
     user != null &&
@@ -306,17 +305,13 @@ export default function ArtworkListingDetails() {
 
             <div>
               <dt>Category</dt>
-              <dd>
-                {categoryLabels[listing.category] || listing.category}
-              </dd>
+              <dd>{categoryLabels[listing.category] || listing.category}</dd>
             </div>
 
             <div>
               <dt>Local pickup</dt>
               <dd>
-                {listing.localPickupAvailable
-                  ? "Available"
-                  : "Not available"}
+                {listing.localPickupAvailable ? "Available" : "Not available"}
               </dd>
             </div>
 
@@ -371,12 +366,16 @@ export default function ArtworkListingDetails() {
           )}
 
           {user && canOffer && (
-            <OfferForm key={`${listing.id}:${user.id}`} listingId={listing.id} />
+            <OfferForm
+              key={`${listing.id}:${user.id}`}
+              listingId={listing.id}
+            />
           )}
 
           {!authLoading && !user && canOffer && (
             <p className="text-muted">
-              <Link to="/login">Log in</Link> to buy or make an offer on this artwork.
+              <Link to="/login">Log in</Link> to buy or make an offer on this
+              artwork.
             </p>
           )}
 

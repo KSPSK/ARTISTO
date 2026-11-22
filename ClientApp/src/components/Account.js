@@ -24,7 +24,11 @@ export default function Account() {
   }
 
   if (isLoading) {
-    return <p className="account-page" role="status">Checking your session...</p>;
+    return (
+      <p className="account-page" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   if (!user) {
@@ -35,8 +39,12 @@ export default function Account() {
           Log in to view and edit your creator profile.
         </p>
         <div className="account-actions d-grid gap-2 d-sm-flex">
-          <Link className="btn btn-primary" to="/login">Log in</Link>
-          <Link className="btn btn-outline-primary" to="/register">Register</Link>
+          <Link className="btn btn-primary" to="/login">
+            Log in
+          </Link>
+          <Link className="btn btn-outline-primary" to="/register">
+            Register
+          </Link>
         </div>
       </main>
     );
@@ -47,10 +55,18 @@ export default function Account() {
       <h1>Account</h1>
       <p className="account-name">{user.displayName}</p>
       <p className="account-username">@{user.username}</p>
-      {error && <div className="alert alert-danger" role="alert">{error}</div>}
+      {error && (
+        <div className="alert alert-danger" role="alert">
+          {error}
+        </div>
+      )}
       <div className="account-actions d-grid gap-2">
-        <Link className="btn btn-primary" to={`/users/${user.id}`}>View profile</Link>
-        <Link className="btn btn-outline-primary" to={`/users/${user.id}/edit`}>Edit profile</Link>
+        <Link className="btn btn-primary" to={`/users/${user.id}`}>
+          View profile
+        </Link>
+        <Link className="btn btn-outline-primary" to={`/users/${user.id}/edit`}>
+          Edit profile
+        </Link>
         <button
           type="button"
           className="btn btn-outline-secondary"

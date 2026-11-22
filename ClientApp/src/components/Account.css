@@ -73,7 +73,9 @@ body:has(.account-page) {
 
 .account-page .btn:focus,
 .account-page .btn:active:focus {
-  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+  box-shadow:
+    0 0 0 0.1rem #ffffff,
+    0 0 0 0.25rem #000000;
 }
 
 @media (max-width: 576px) {
