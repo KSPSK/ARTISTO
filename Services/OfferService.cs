@@ -69,6 +69,15 @@ public class OfferService(
                 ?? ServiceResult<OfferResponse>.Conflict("You already have a pending offer for this artwork.");
         }
 
+        // A purchase may have reserved the artwork while this offer was being saved.
+        // Check again, so an offer never stays open on an artwork that is no longer available.
+        var listingAfterInsert = await offers.GetListingAsync(request.ArtworkListingId, cancellationToken);
+        if (listingAfterInsert is null || !listingAfterInsert.IsAvailable)
+        {
+            await offers.DeclineIfOpenAsync(id.Value);
+            return ServiceResult<OfferResponse>.Conflict("This artwork is no longer available.");
+        }
+
         var created = await offers.GetByIdAsync(id.Value);
         if (created is null)
         {
@@ -149,6 +158,9 @@ public class OfferService(
             return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
         }
 
+        // Offers submitted after otherOffers was loaded are declined now that the artwork is reserved.
+        var lateOffers = await offers.DeclineOpenOffersAsync(offer.ArtworkListingId, offer.Id);
+
         var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
         if (otherPartyId is int notifyUserId)
         {
@@ -159,7 +171,7 @@ public class OfferService(
                 $"/orders/{offer.OrderId}");
         }
 
-        foreach (var other in otherOffers)
+        foreach (var other in otherOffers.Concat(lateOffers))
         {
             await notifications.NotifyAsync(
                 other.BuyerId,
