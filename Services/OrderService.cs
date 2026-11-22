@@ -7,11 +7,16 @@ namespace ARTISTO.Services;
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOfferRepository _offerRepository;
     private readonly INotificationService _notificationService;
 
-    public OrderService(IOrderRepository orderRepository, INotificationService notificationService)
+    public OrderService(
+        IOrderRepository orderRepository,
+        IOfferRepository offerRepository,
+        INotificationService notificationService)
     {
         _orderRepository = orderRepository;
+        _offerRepository = offerRepository;
         _notificationService = notificationService;
     }
 
@@ -48,6 +53,15 @@ public class OrderService : IOrderService
 
     public async Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
     {
+        // Once the artwork is bought directly, its open offers can no longer be accepted.
+        // They are changed here and saved together with the new order in one SaveChanges call.
+        var openOffers = await _offerRepository.GetOpenOffersForListingAsync(request.ArtworkListingId, exceptOfferId: 0);
+        foreach (var offer in openOffers)
+        {
+            offer.Status = OfferStatus.Declined;
+            offer.RespondedAtUtc = DateTime.UtcNow;
+        }
+
         var result = await PlaceOrderAsync(request.ArtworkListingId, buyerId, agreedPrice: null, request.PickupNotes);
 
         if (result.IsSuccess)
@@ -58,6 +72,15 @@ public class OrderService : IOrderService
                 NotificationType.OrderPlaced,
                 $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
                 $"/orders/{order.Id}");
+
+            foreach (var offer in openOffers.Where(offer => offer.BuyerId != buyerId))
+            {
+                await _notificationService.NotifyAsync(
+                    offer.BuyerId,
+                    NotificationType.OfferDeclined,
+                    $"Your offer for \"{order.ArtworkTitle}\" was declined because the artwork was bought by another buyer.",
+                    "/offers");
+            }
         }
 
         return result;
