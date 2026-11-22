@@ -52,7 +52,7 @@
 }
 
 .artwork-listings .artwork-search .btn-outline-secondary:hover {
-  color: #FFFFFF;
+  color: #ffffff;
   background: #000000;
 }
 
@@ -100,8 +100,8 @@
 
 .artwork-listings .artwork-card {
   padding: 12px;
-  background: #FFFFFF;
-  border: 1px solid #DDDDDD;
+  background: #ffffff;
+  border: 1px solid #dddddd;
   border-radius: 4px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
@@ -112,8 +112,8 @@
 }
 
 .artwork-listings .artwork-thumb-empty {
-  background: #F1F1F1;
-  border: 1px solid #DDDDDD;
+  background: #f1f1f1;
+  border: 1px solid #dddddd;
   color: #000000;
   font-family: Georgia, serif;
 }

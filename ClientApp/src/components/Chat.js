@@ -17,7 +17,9 @@ function ChatAccess({ children }) {
       <main className="chat-page">
         <h1>Messages</h1>
         <p>Log in to view your conversations.</p>
-        <Link className="btn btn-primary" to="/login">Log in</Link>
+        <Link className="btn btn-primary" to="/login">
+          Log in
+        </Link>
       </main>
     );
   }
@@ -27,9 +29,7 @@ function ChatAccess({ children }) {
 
 export function Conversations() {
   return (
-    <ChatAccess>
-      {(user) => <ConversationList key={user.id} />}
-    </ChatAccess>
+    <ChatAccess>{(user) => <ConversationList key={user.id} />}</ChatAccess>
   );
 }
 
@@ -40,11 +40,7 @@ function ConversationList() {
     <main className="chat-page">
       <h1>Messages</h1>
 
-      <button
-        type="button"
-        className="btn btn-secondary mb-3"
-        onClick={reload}
-      >
+      <button type="button" className="btn btn-secondary mb-3" onClick={reload}>
         Refresh
       </button>
 
@@ -53,8 +49,8 @@ function ConversationList() {
 
       {data?.length === 0 && (
         <p>
-          No conversations yet. Open a creator's profile and select
-          “Send message”.
+          No conversations yet. Open a creator's profile and select “Send
+          message”.
         </p>
       )}
 
@@ -86,21 +82,14 @@ export function Conversation() {
   return (
     <ChatAccess>
       {(user) => (
-        <ConversationContent
-          key={`${user.id}-${id}`}
-          id={id}
-          user={user}
-        />
+        <ConversationContent key={`${user.id}-${id}`} id={id} user={user} />
       )}
     </ChatAccess>
   );
 }
 
 function ConversationContent({ id, user }) {
-  const { data, error, reload } = useApiData(
-    `/api/conversations/${id}`,
-    5000
-  );
+  const { data, error, reload } = useApiData(`/api/conversations/${id}`, 5000);
   const [content, setContent] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
@@ -138,7 +127,9 @@ function ConversationContent({ id, user }) {
       {error && (
         <div role="alert">
           <p>{error}</p>
-          <button type="button" className="btn btn-primary" onClick={reload}>Try again</button>
+          <button type="button" className="btn btn-primary" onClick={reload}>
+            Try again
+          </button>
         </div>
       )}
 

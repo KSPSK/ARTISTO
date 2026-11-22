@@ -37,10 +37,17 @@ Run these commands from the repository root:
 
 ```powershell
 cd ClientApp
+npm run format
+npm run format:check
 npm run lint
 npm test -- --runInBand
 cd ..
 ```
+
+`npm run format` formats everything in `ClientApp/src` with Prettier. Its rules
+are in `ClientApp/.prettierrc.json`. Run `npm install` in `ClientApp` once after
+pulling so that Prettier is installed. The check command should finish without
+formatting errors.
 
 The `caniuse-lite is outdated` notice does not mean that lint failed.
 

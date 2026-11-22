@@ -53,9 +53,7 @@ export default function ReviewForm({ order }) {
       <section className="reviews-section border rounded p-3 mt-4">
         <h2>Your review</h2>
         <p role="status">You have reviewed this order.</p>
-        <Link to={`/users/${order.sellerId}`}>
-          View seller reviews
-        </Link>
+        <Link to={`/users/${order.sellerId}`}>View seller reviews</Link>
       </section>
     );
   }
@@ -64,7 +62,9 @@ export default function ReviewForm({ order }) {
     return (
       <section className="reviews-section mt-4">
         <p role="alert">{error}</p>
-        <button type="button" className="btn btn-primary" onClick={reload}>Try again</button>
+        <button type="button" className="btn btn-primary" onClick={reload}>
+          Try again
+        </button>
       </section>
     );
   }
@@ -111,11 +111,7 @@ export default function ReviewForm({ order }) {
 
         {submitError && <p role="alert">{submitError}</p>}
 
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={saving}
-        >
+        <button type="submit" className="btn btn-primary" disabled={saving}>
           {saving ? "Submitting..." : "Submit review"}
         </button>
       </form>

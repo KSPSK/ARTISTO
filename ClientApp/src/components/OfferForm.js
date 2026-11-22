@@ -24,8 +24,14 @@ export default function OfferForm({ listingId }) {
 
     const fields = new FormData(event.currentTarget);
     const value = Number(fields.get("amount"));
-    if (value < minAmount || value > maxAmount || Math.round(value * 100) / 100 !== value) {
-      setError("Enter an amount from €0.01 to €1,000,000 with at most two decimal places.");
+    if (
+      value < minAmount ||
+      value > maxAmount ||
+      Math.round(value * 100) / 100 !== value
+    ) {
+      setError(
+        "Enter an amount from €0.01 to €1,000,000 with at most two decimal places."
+      );
       return;
     }
 
@@ -44,14 +50,24 @@ export default function OfferForm({ listingId }) {
       });
 
       if (response.status === 401) {
-        setError(<>Your session has expired. <Link to="/login">Log in</Link> to make an offer.</>);
+        setError(
+          <>
+            Your session has expired. <Link to="/login">Log in</Link> to make an
+            offer.
+          </>
+        );
         return;
       }
 
       if (!response.ok) {
         const problem = await response.json().catch(() => null);
-        const validation = problem?.errors && Object.values(problem.errors).flat().join(" ");
-        setError(problem?.message || validation || "Unable to send your offer. Please try again.");
+        const validation =
+          problem?.errors && Object.values(problem.errors).flat().join(" ");
+        setError(
+          problem?.message ||
+            validation ||
+            "Unable to send your offer. Please try again."
+        );
         return;
       }
 
@@ -67,7 +83,9 @@ export default function OfferForm({ listingId }) {
   return (
     <div className="mt-3">
       <div role="status">
-        {submitted && <p className="alert alert-success mb-0">Offer submitted.</p>}
+        {submitted && (
+          <p className="alert alert-success mb-0">Offer submitted.</p>
+        )}
       </div>
       {!submitted && (
         <button
@@ -84,8 +102,17 @@ export default function OfferForm({ listingId }) {
       )}
 
       {isOpen && (
-        <form id={formId} className="mt-3 p-3 border rounded" onSubmit={submitOffer} noValidate>
-          {error && <p className="alert alert-danger" role="alert">{error}</p>}
+        <form
+          id={formId}
+          className="mt-3 p-3 border rounded"
+          onSubmit={submitOffer}
+          noValidate
+        >
+          {error && (
+            <p className="alert alert-danger" role="alert">
+              {error}
+            </p>
+          )}
 
           <fieldset disabled={isSubmitting}>
             <label htmlFor={`${formId}-amount`} className="form-label">
@@ -116,7 +143,11 @@ export default function OfferForm({ listingId }) {
               <button type="submit" className="btn btn-primary">
                 {isSubmitting ? "Sending offer..." : "Send offer"}
               </button>
-              <button type="button" className="btn btn-secondary" onClick={closeForm}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={closeForm}
+              >
                 Cancel
               </button>
             </div>

@@ -9,8 +9,7 @@ export async function api(path, options = {}) {
 
   try {
     data = text ? JSON.parse(text) : null;
-  } catch {
-  }
+  } catch {}
 
   if (!response.ok) {
     const validationMessage = data?.errors
@@ -23,9 +22,9 @@ export async function api(path, options = {}) {
         : response.status === 403
           ? "You do not have permission to do this."
           : data?.message ||
-          validationMessage ||
-          data?.title ||
-          `Request failed (${response.status}).`;
+            validationMessage ||
+            data?.title ||
+            `Request failed (${response.status}).`;
 
     const error = new Error(message);
     error.status = response.status;

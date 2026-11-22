@@ -57,7 +57,9 @@ export default function Register() {
       });
 
       if (!response.ok) {
-        setError(await readError(response, "Unable to register. Please try again."));
+        setError(
+          await readError(response, "Unable to register. Please try again.")
+        );
         return;
       }
 
@@ -76,15 +78,17 @@ export default function Register() {
   }
 
   if (authLoading) {
-    return <p className="register-page" role="status">Checking your session...</p>;
+    return (
+      <p className="register-page" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   return (
     <main className="register-page">
       <h1>Create account</h1>
-      <p className="register-lead">
-        Register a creator profile on ARTISTO.
-      </p>
+      <p className="register-lead">Register a creator profile on ARTISTO.</p>
 
       {error && (
         <div className="alert alert-danger" role="alert">
@@ -95,7 +99,9 @@ export default function Register() {
       <form onSubmit={handleSubmit}>
         <fieldset disabled={isLoading}>
           <div className="mb-3">
-            <label htmlFor="username" className="form-label">Username</label>
+            <label htmlFor="username" className="form-label">
+              Username
+            </label>
             <input
               id="username"
               name="username"
@@ -110,7 +116,9 @@ export default function Register() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
             <input
               id="password"
               name="password"
@@ -125,7 +133,9 @@ export default function Register() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="displayName" className="form-label">Display name</label>
+            <label htmlFor="displayName" className="form-label">
+              Display name
+            </label>
             <input
               id="displayName"
               name="displayName"
@@ -138,7 +148,9 @@ export default function Register() {
           </div>
 
           <div className="mb-3">
-            <label htmlFor="city" className="form-label">City</label>
+            <label htmlFor="city" className="form-label">
+              City
+            </label>
             <input
               id="city"
               name="city"
@@ -151,7 +163,9 @@ export default function Register() {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="description" className="form-label">Description</label>
+            <label htmlFor="description" className="form-label">
+              Description
+            </label>
             <textarea
               id="description"
               name="description"

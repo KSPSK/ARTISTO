@@ -4,10 +4,7 @@ import { useAuth } from "../AuthContext";
 import { postJson } from "../api";
 import "./StartChatButton.css";
 
-export default function StartChatButton({
-  participantId,
-  artworkListingId,
-}) {
+export default function StartChatButton({ participantId, artworkListingId }) {
   const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
@@ -32,9 +29,7 @@ export default function StartChatButton({
     try {
       const conversation = await postJson("/api/conversations", {
         participantId: Number(participantId),
-        artworkListingId: artworkListingId
-          ? Number(artworkListingId)
-          : null,
+        artworkListingId: artworkListingId ? Number(artworkListingId) : null,
       });
 
       navigate(`/messages/${conversation.id}`);

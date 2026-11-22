@@ -2,7 +2,9 @@ import React, { useState } from "react";
 
 export function ListingImage({ imageUrl, title, large }) {
   const [failed, setFailed] = useState(false);
-  const emptyClass = large ? "listing-details-image" : "artwork-thumb artwork-thumb-empty";
+  const emptyClass = large
+    ? "listing-details-image"
+    : "artwork-thumb artwork-thumb-empty";
 
   if (!imageUrl || failed) {
     return (

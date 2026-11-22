@@ -53,15 +53,23 @@ export default function MyOrders() {
   }, [user, role, retryCount]);
 
   if (authLoading) {
-    return <p className="my-orders" role="status">Checking your session...</p>;
+    return (
+      <p className="my-orders" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   if (!user) {
     return (
       <main className="my-orders">
         <h1>My orders</h1>
-        <p className="my-orders-lead">Log in to see your purchases and sales.</p>
-        <Link className="btn btn-primary" to="/login">Log in</Link>
+        <p className="my-orders-lead">
+          Log in to see your purchases and sales.
+        </p>
+        <Link className="btn btn-primary" to="/login">
+          Log in
+        </Link>
       </main>
     );
   }
@@ -118,7 +126,9 @@ export default function MyOrders() {
               </p>
             </div>
             <div className="my-orders-right">
-              <span className="my-orders-price">{formatPrice(order.price)}</span>
+              <span className="my-orders-price">
+                {formatPrice(order.price)}
+              </span>
               <span
                 className={`my-orders-status my-orders-status-${order.status.toLowerCase()}`}
               >

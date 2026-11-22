@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { ListingImage } from "./ListingImage";
 import {
   artworkCategories,
@@ -42,7 +47,9 @@ export function ArtworkListings() {
     fetch(url, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) {
-          throw new Error(`Server responded with an error (${response.status})`);
+          throw new Error(
+            `Server responded with an error (${response.status})`
+          );
         }
         return response.json();
       })
@@ -62,11 +69,13 @@ export function ArtworkListings() {
 
   function handleSearch(event) {
     event.preventDefault();
-    navigate(listingSearchPath({
-      q: searchInput,
-      category: categoryInput,
-      maxPrice: maxPriceInput,
-    }));
+    navigate(
+      listingSearchPath({
+        q: searchInput,
+        category: categoryInput,
+        maxPrice: maxPriceInput,
+      })
+    );
   }
 
   function handleClear() {
@@ -97,9 +106,7 @@ export function ArtworkListings() {
     }
 
     if (listings.length === 0 && filtersActive) {
-      return (
-        <p className="artwork-status">No listings match these filters.</p>
-      );
+      return <p className="artwork-status">No listings match these filters.</p>;
     }
 
     if (listings.length === 0) {
@@ -121,14 +128,18 @@ export function ArtworkListings() {
             <h3 className="artwork-title">{listing.title}</h3>
             <p className="artwork-creator">
               {listing.userId ? (
-                <Link to={`/users/${listing.userId}`}>{listing.creatorName}</Link>
+                <Link to={`/users/${listing.userId}`}>
+                  {listing.creatorName}
+                </Link>
               ) : (
                 listing.creatorName
               )}
             </p>
             <p className="artwork-price">{listing.price} €</p>
             <p className="artwork-category">
-              {listing.category === "DigitalArt" ? "Digital art" : listing.category}
+              {listing.category === "DigitalArt"
+                ? "Digital art"
+                : listing.category}
             </p>
             <Link
               className="btn btn-primary artwork-open"
@@ -173,7 +184,11 @@ export function ArtworkListings() {
           <button className="btn btn-primary" type="submit">
             Search
           </button>
-          <button className="btn btn-outline-secondary" type="button" onClick={handleClear}>
+          <button
+            className="btn btn-outline-secondary"
+            type="button"
+            onClick={handleClear}
+          >
             Clear
           </button>
         </div>

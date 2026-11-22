@@ -63,9 +63,12 @@ export default function CreatorProfile() {
         const profile = await response.json();
         if (controller.signal.aborted) return;
 
-        const listingsResponse = await fetch(`/api/users/${id}/artworklistings`, {
-          signal: controller.signal,
-        });
+        const listingsResponse = await fetch(
+          `/api/users/${id}/artworklistings`,
+          {
+            signal: controller.signal,
+          }
+        );
 
         const profileListings = listingsResponse.ok
           ? await listingsResponse.json()
@@ -357,18 +360,25 @@ export default function CreatorProfile() {
         </div>
         <div>
           <dt>Description</dt>
-          <dd>{user.description?.trim() ? user.description : "No description provided."}</dd>
+          <dd>
+            {user.description?.trim()
+              ? user.description
+              : "No description provided."}
+          </dd>
         </div>
       </dl>
 
       {isOwnProfile && (
-        <Link to={`/users/${user.id}/edit`} className="btn btn-primary creator-edit">
+        <Link
+          to={`/users/${user.id}/edit`}
+          className="btn btn-primary creator-edit"
+        >
           Edit profile
         </Link>
       )}
 
       <StartChatButton key={user.id} participantId={user.id} />
-      
+
       <CreatorReviews key={user.id} sellerId={user.id} />
 
       <h2>Listings</h2>
@@ -381,7 +391,10 @@ export default function CreatorProfile() {
               <ListingImage imageUrl={listing.imageUrl} title={listing.title} />
               <h3 className="artwork-title">{listing.title}</h3>
               <p className="artwork-price">{listing.price} €</p>
-              <Link className="btn btn-primary artwork-open" to={`/listings/${listing.id}`}>
+              <Link
+                className="btn btn-primary artwork-open"
+                to={`/listings/${listing.id}`}
+              >
                 Open listing
               </Link>
             </div>

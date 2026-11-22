@@ -45,7 +45,9 @@ body:has(.profile-gate) {
 
 .profile-gate .btn:focus,
 .profile-gate .btn:active:focus {
-  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+  box-shadow:
+    0 0 0 0.1rem #ffffff,
+    0 0 0 0.25rem #000000;
 }
 
 @media (max-width: 576px) {
@@ -148,7 +150,9 @@ body:has(.profile-gate) {
 
 .profile-form .btn:focus,
 .profile-form .btn:active:focus {
-  box-shadow: 0 0 0 0.1rem #ffffff, 0 0 0 0.25rem #000000;
+  box-shadow:
+    0 0 0 0.1rem #ffffff,
+    0 0 0 0.25rem #000000;
 }
 
 @media (max-width: 576px) {

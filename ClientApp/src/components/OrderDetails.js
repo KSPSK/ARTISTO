@@ -117,7 +117,11 @@ export default function OrderDetails() {
   }
 
   if (authLoading) {
-    return <p className="order-details" role="status">Checking your session...</p>;
+    return (
+      <p className="order-details" role="status">
+        Checking your session...
+      </p>
+    );
   }
 
   if (!user) {
@@ -125,13 +129,19 @@ export default function OrderDetails() {
       <main className="order-details">
         <h1>Order</h1>
         <p className="order-details-muted">Log in to see this order.</p>
-        <Link className="btn btn-primary" to="/login">Log in</Link>
+        <Link className="btn btn-primary" to="/login">
+          Log in
+        </Link>
       </main>
     );
   }
 
   if (status === "loading") {
-    return <p className="order-details" role="status">Loading order...</p>;
+    return (
+      <p className="order-details" role="status">
+        Loading order...
+      </p>
+    );
   }
 
   if (status === "notFound" || status === "forbidden") {
@@ -143,7 +153,9 @@ export default function OrderDetails() {
             ? "You can only view orders where you are the buyer or the seller."
             : "This order does not exist."}
         </p>
-        <Link className="btn btn-primary" to="/orders">Back to my orders</Link>
+        <Link className="btn btn-primary" to="/orders">
+          Back to my orders
+        </Link>
       </main>
     );
   }
@@ -167,8 +179,18 @@ export default function OrderDetails() {
 
   const isBuyer = String(order.buyerId) === String(user.id);
   const otherParty = isBuyer
-    ? { label: "Seller", id: order.sellerId, name: order.sellerDisplayName, city: order.sellerCity }
-    : { label: "Buyer", id: order.buyerId, name: order.buyerDisplayName, city: order.buyerCity };
+    ? {
+        label: "Seller",
+        id: order.sellerId,
+        name: order.sellerDisplayName,
+        city: order.sellerCity,
+      }
+    : {
+        label: "Buyer",
+        id: order.buyerId,
+        name: order.buyerDisplayName,
+        city: order.buyerCity,
+      };
 
   const isSeller = !isBuyer;
   const canHandover = isSeller && order.status === "Pending";
@@ -190,7 +212,7 @@ export default function OrderDetails() {
         </span>
       </div>
 
-    {flashMessage && !actionMessage && (
+      {flashMessage && !actionMessage && (
         <div className="alert alert-success" role="status">
           {flashMessage}
         </div>
@@ -234,7 +256,7 @@ export default function OrderDetails() {
               </div>
             )}
           </dl>
-          
+
           <StartChatButton
             key={`${order.id}-${otherParty.id}`}
             participantId={otherParty.id}
@@ -254,7 +276,7 @@ export default function OrderDetails() {
               <li>Cancelled: {formatDate(order.cancelledAtUtc)}</li>
             )}
           </ul>
-                    {actionMessage && (
+          {actionMessage && (
             <div className="alert alert-success mt-3" role="status">
               {actionMessage}
             </div>
@@ -302,7 +324,10 @@ export default function OrderDetails() {
                   className="btn btn-primary"
                   disabled={isWorking}
                   onClick={() =>
-                    runAction("complete", "Receipt confirmed. The order is completed.")
+                    runAction(
+                      "complete",
+                      "Receipt confirmed. The order is completed."
+                    )
                   }
                 >
                   Confirm receipt
@@ -364,7 +389,7 @@ export default function OrderDetails() {
         </div>
       </div>
       {isBuyer && order.status === "Completed" && (
-      <ReviewForm key={order.id} order={order} />
+        <ReviewForm key={order.id} order={order} />
       )}
     </main>
   );
