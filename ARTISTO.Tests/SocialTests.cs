@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -19,6 +20,7 @@ namespace ARTISTO.Tests;
 public sealed class SocialApp : WebApplicationFactory<Program>
 {
     private readonly string _file = Path.Combine(Path.GetTempPath(), $"artisto-tests-{Guid.NewGuid():N}.db");
+    public IInterceptor[] Interceptors { get; init; } = [];
     public RecordingNotificationService Notifications { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -28,7 +30,9 @@ public sealed class SocialApp : WebApplicationFactory<Program>
         {
             services.RemoveAll<DbContextOptions<ArtistoDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ArtistoDbContext>>();
-            services.AddDbContext<ArtistoDbContext>(options => options.UseSqlite($"Data Source={_file};Foreign Keys=True;Pooling=False"));
+            services.AddDbContext<ArtistoDbContext>(options => options
+                .UseSqlite($"Data Source={_file};Foreign Keys=True;Pooling=False")
+                .AddInterceptors(Interceptors));
             services.RemoveAll<INotificationService>();
             services.AddSingleton<INotificationService>(Notifications);
         });

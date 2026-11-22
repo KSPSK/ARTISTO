@@ -1,6 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using ARTISTO.Data;
+using ARTISTO.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace ARTISTO.Tests;
@@ -77,6 +82,34 @@ public class ReviewApiTests
         Assert.Equal(sellerId, review.GetProperty("sellerId").GetInt32());
 
         Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Concurrent_submissions_for_one_order_create_only_one_review()
+    {
+        using var app = new SocialApp { Interceptors = [new ConcurrentReviewSaves()] };
+        await app.Seed();
+        using var seller = app.Client();
+        using var buyer = app.Client();
+        await app.Register(seller);
+        await app.Register(buyer);
+        var orderId = await CompletedOrder(seller, buyer);
+
+        var responses = await Task.WhenAll(
+            LeaveReview(buyer, orderId, 5),
+            LeaveReview(buyer, orderId, 4));
+        using var first = responses[0];
+        using var second = responses[1];
+
+        Assert.Equal(new[] { HttpStatusCode.Created, HttpStatusCode.Conflict },
+            new[] { first.StatusCode, second.StatusCode }.Order());
+
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ArtistoDbContext>();
+        var review = Assert.Single(await db.Reviews.Where(entry => entry.OrderId == orderId).ToListAsync());
+        var createdResponse = responses.Single(response => response.StatusCode == HttpStatusCode.Created);
+        var createdReview = await createdResponse.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(review.Id, createdReview.GetProperty("id").GetInt32());
     }
 
     [Fact]
@@ -290,5 +323,30 @@ public class ReviewApiTests
         using var response = await anonymous.GetAsync("/api/users/999999/reviews");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private sealed class ConcurrentReviewSaves : SaveChangesInterceptor
+    {
+        private readonly TaskCompletionSource _bothSaving = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _reviewSaves;
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context?.ChangeTracker.Entries<Review>().Any(entry => entry.State == EntityState.Added) == true)
+            {
+                // Hold the first write until both requests have passed the existing-review check.
+                if (Interlocked.Increment(ref _reviewSaves) == 2)
+                {
+                    _bothSaving.SetResult();
+                }
+
+                await _bothSaving.Task.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            }
+
+            return result;
+        }
     }
 }
