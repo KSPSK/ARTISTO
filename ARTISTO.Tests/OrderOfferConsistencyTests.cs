@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using ARTISTO.Services;
 using Xunit;
+using ARTISTO.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ARTISTO.Tests;
 
@@ -107,5 +110,81 @@ public class OrderOfferConsistencyTests
         var offerStatus = await Status(buyer, $"/api/offers/{offerId}");
         var sales = await seller.GetFromJsonAsync<JsonElement>("/api/orders?role=seller");
         Assert.Equal(offerStatus == "Accepted" ? 1 : 0, sales.GetArrayLength());
+    }
+
+    [Fact]
+    public async Task Offer_submitted_while_a_direct_order_is_saving_does_not_stay_open()
+    {
+        var beforeOrderSave = new BeforeOrderSave();
+        using var app = new SocialApp { Interceptors = [beforeOrderSave] };
+        await app.Seed();
+        using var seller = app.Client();
+        using var directBuyer = app.Client();
+        using var lateBuyer = app.Client();
+        await app.Register(seller);
+        await app.Register(directBuyer);
+        var lateBuyerId = await app.Register(lateBuyer);
+        var listingId = await app.Artwork(seller, localPickupAvailable: true);
+
+        var lateOfferId = 0;
+        beforeOrderSave.Action = async () => { lateOfferId = await MakeOffer(lateBuyer, listingId, 6); };
+
+        var order = await directBuyer.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
+
+        Assert.Equal(HttpStatusCode.Created, order.StatusCode);
+        Assert.NotEqual(0, lateOfferId);
+        Assert.Equal("Reserved", await Status(seller, $"/api/artworklistings/{listingId}"));
+        Assert.Equal("Declined", await Status(lateBuyer, $"/api/offers/{lateOfferId}"));
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == lateBuyerId && n.Type == NotificationType.OfferDeclined);
+    }
+
+    [Fact]
+    public async Task Offer_submitted_while_another_offer_is_accepted_does_not_stay_open()
+    {
+        var beforeOrderSave = new BeforeOrderSave();
+        using var app = new SocialApp { Interceptors = [beforeOrderSave] };
+        await app.Seed();
+        using var seller = app.Client();
+        using var buyer = app.Client();
+        using var lateBuyer = app.Client();
+        await app.Register(seller);
+        await app.Register(buyer);
+        var lateBuyerId = await app.Register(lateBuyer);
+        var listingId = await app.Artwork(seller, localPickupAvailable: true);
+        var offerId = await MakeOffer(buyer, listingId, 6);
+
+        var lateOfferId = 0;
+        beforeOrderSave.Action = async () => { lateOfferId = await MakeOffer(lateBuyer, listingId, 7); };
+
+        var accepted = await seller.PostAsync($"/api/offers/{offerId}/accept", null);
+
+        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
+        Assert.NotEqual(0, lateOfferId);
+        Assert.Equal("Declined", await Status(lateBuyer, $"/api/offers/{lateOfferId}"));
+        Assert.Contains(app.Notifications.Sent, n => n.UserId == lateBuyerId && n.Type == NotificationType.OfferDeclined);
+    }
+
+    // Runs an action right before the first order is saved, so the race happens every time.
+    private sealed class BeforeOrderSave : SaveChangesInterceptor
+    {
+        private int _ran;
+
+        public Func<Task>? Action { get; set; }
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            var addsOrder = eventData.Context?.ChangeTracker.Entries<Order>()
+                .Any(entry => entry.State == EntityState.Added) == true;
+
+            if (addsOrder && Action is not null && Interlocked.Exchange(ref _ran, 1) == 0)
+            {
+                await Action();
+            }
+
+            return result;
+        }
     }
 }
