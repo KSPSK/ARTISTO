@@ -78,6 +78,8 @@ public class OrderOfferConsistencyTests
             buyer.PostAsJsonAsync($"/api/orders/{orderId}/cancel", new { }));
 
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+        Assert.Single(responses, response =>
+            response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.BadRequest);
         var orderStatus = await Status(buyer, $"/api/orders/{orderId}");
         var listingStatus = await Status(buyer, $"/api/artworklistings/{listingId}");
         Assert.Equal(orderStatus == "Cancelled" ? "Available" : "Reserved", listingStatus);
@@ -100,6 +102,8 @@ public class OrderOfferConsistencyTests
             seller.PostAsync($"/api/offers/{offerId}/decline", null));
 
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+        Assert.Single(responses, response =>
+            response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.BadRequest);
         var offerStatus = await Status(buyer, $"/api/offers/{offerId}");
         var sales = await seller.GetFromJsonAsync<JsonElement>("/api/orders?role=seller");
         Assert.Equal(offerStatus == "Accepted" ? 1 : 0, sales.GetArrayLength());
