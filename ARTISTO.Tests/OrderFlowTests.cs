@@ -180,6 +180,8 @@ public class OrderFlowTests
             seller.PostAsync($"/api/offers/{secondOfferId}/accept", null));
 
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
+        Assert.Single(responses, response =>
+            response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.BadRequest);
         var sales = await Json(await seller.GetAsync("/api/orders?role=seller"));
         Assert.Single(sales.EnumerateArray());
         Assert.Equal("Reserved", await ListingStatus(seller, listingId));
