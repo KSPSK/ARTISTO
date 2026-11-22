@@ -70,11 +70,9 @@ public class OfferService(
         }
 
         // A purchase may have reserved the artwork while this offer was being saved.
-        // Check again, so an offer never stays open on an artwork that is no longer available.
-        var listingAfterInsert = await offers.GetListingAsync(request.ArtworkListingId, cancellationToken);
-        if (listingAfterInsert is null || !listingAfterInsert.IsAvailable)
+        // If so, decline it right away, so an offer never stays open on an artwork that is not available.
+        if (await offers.DeclineIfListingUnavailableAsync(id.Value))
         {
-            await offers.DeclineIfOpenAsync(id.Value);
             return ServiceResult<OfferResponse>.Conflict("This artwork is no longer available.");
         }
 
@@ -159,7 +157,7 @@ public class OfferService(
         }
 
         // Offers submitted after otherOffers was loaded are declined now that the artwork is reserved.
-        var lateOffers = await offers.DeclineOpenOffersAsync(offer.ArtworkListingId, offer.Id);
+        var lateBuyerIds = await offers.DeclineOpenOffersIfListingUnavailableAsync(offer.ArtworkListingId, offer.Id);
 
         var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
         if (otherPartyId is int notifyUserId)
@@ -171,10 +169,10 @@ public class OfferService(
                 $"/orders/{offer.OrderId}");
         }
 
-        foreach (var other in otherOffers.Concat(lateOffers))
+        foreach (var declinedBuyerId in otherOffers.Select(other => other.BuyerId).Concat(lateBuyerIds))
         {
             await notifications.NotifyAsync(
-                other.BuyerId,
+                declinedBuyerId,
                 NotificationType.OfferDeclined,
                 $"Your offer for \"{offer.ArtworkListing?.Title}\" was declined because the artwork was sold to another buyer.",
                 "/offers");

@@ -68,17 +68,18 @@ public class OrderService : IOrderService
         {
             var order = result.Value!;
             // Offers submitted after openOffers was loaded are declined now that the artwork is reserved.
-            var lateOffers = await _offerRepository.DeclineOpenOffersAsync(request.ArtworkListingId, exceptOfferId: 0);
+            var lateBuyerIds = await _offerRepository.DeclineOpenOffersIfListingUnavailableAsync(request.ArtworkListingId, exceptOfferId: 0);
             await _notificationService.NotifyAsync(
                 order.SellerId,
                 NotificationType.OrderPlaced,
                 $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
                 $"/orders/{order.Id}");
 
-            foreach (var offer in openOffers.Concat(lateOffers).Where(offer => offer.BuyerId != buyerId))
+            var declinedBuyerIds = openOffers.Select(offer => offer.BuyerId).Concat(lateBuyerIds);
+            foreach (var declinedBuyerId in declinedBuyerIds.Where(id => id != buyerId))
             {
                 await _notificationService.NotifyAsync(
-                    offer.BuyerId,
+                    declinedBuyerId,
                     NotificationType.OfferDeclined,
                     $"Your offer for \"{order.ArtworkTitle}\" was declined because the artwork was bought by another buyer.",
                     "/offers");

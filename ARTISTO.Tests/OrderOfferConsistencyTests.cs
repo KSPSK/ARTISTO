@@ -164,6 +164,38 @@ public class OrderOfferConsistencyTests
         Assert.Contains(app.Notifications.Sent, n => n.UserId == lateBuyerId && n.Type == NotificationType.OfferDeclined);
     }
 
+    [Fact]
+    public async Task Offer_submitted_after_the_order_is_cancelled_stays_open()
+    {
+        var afterOrderSave = new AfterOrderSave();
+        using var app = new SocialApp { Interceptors = [afterOrderSave] };
+        await app.Seed();
+        using var seller = app.Client();
+        using var directBuyer = app.Client();
+        using var lateBuyer = app.Client();
+        await app.Register(seller);
+        await app.Register(directBuyer);
+        await app.Register(lateBuyer);
+        var listingId = await app.Artwork(seller, localPickupAvailable: true);
+
+        var lateOfferId = 0;
+        afterOrderSave.Action = async () =>
+        {
+            var orders = await directBuyer.GetFromJsonAsync<JsonElement>("/api/orders?role=buyer");
+            var orderId = orders[0].GetProperty("id").GetInt32();
+            var cancelled = await directBuyer.PostAsJsonAsync($"/api/orders/{orderId}/cancel", new { });
+            Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
+            lateOfferId = await MakeOffer(lateBuyer, listingId, 6);
+        };
+
+        var order = await directBuyer.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
+
+        Assert.Equal(HttpStatusCode.Created, order.StatusCode);
+        Assert.NotEqual(0, lateOfferId);
+        Assert.Equal("Available", await Status(seller, $"/api/artworklistings/{listingId}"));
+        Assert.Equal("Pending", await Status(lateBuyer, $"/api/offers/{lateOfferId}"));
+    }
+
     // Runs an action right before the first order is saved, so the race happens every time.
     private sealed class BeforeOrderSave : SaveChangesInterceptor
     {
@@ -180,6 +212,41 @@ public class OrderOfferConsistencyTests
                 .Any(entry => entry.State == EntityState.Added) == true;
 
             if (addsOrder && Action is not null && Interlocked.Exchange(ref _ran, 1) == 0)
+            {
+                await Action();
+            }
+
+            return result;
+        }
+    }
+
+    // Runs an action right after the first order is saved, before the purchase finishes its cleanup.
+    private sealed class AfterOrderSave : SaveChangesInterceptor
+    {
+        private int _orderSaving;
+        private int _ran;
+
+        public Func<Task>? Action { get; set; }
+
+        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData,
+            InterceptionResult<int> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (eventData.Context?.ChangeTracker.Entries<Order>().Any(entry => entry.State == EntityState.Added) == true)
+            {
+                Interlocked.Exchange(ref _orderSaving, 1);
+            }
+
+            return base.SavingChangesAsync(eventData, result, cancellationToken);
+        }
+
+        public override async ValueTask<int> SavedChangesAsync(
+            SaveChangesCompletedEventData eventData,
+            int result,
+            CancellationToken cancellationToken = default)
+        {
+            if (_orderSaving == 1 && Action is not null && Interlocked.Exchange(ref _ran, 1) == 0)
             {
                 await Action();
             }
