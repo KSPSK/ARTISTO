@@ -1,5 +1,6 @@
 using ARTISTO.Data;
 using ARTISTO.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace ARTISTO.Services;
 
@@ -123,9 +124,17 @@ public class OfferService(
                 $"This offer is already {offer.Status.ToString().ToLowerInvariant()}.");
         }
 
-        // The offer change is saved together with the new order in one SaveChanges call.
+        // The accepted offer, the other declined offers and the new order are saved in one SaveChanges call,
+        // so either all of them change or none do.
         offer.Status = OfferStatus.Accepted;
         offer.RespondedAtUtc = DateTime.UtcNow;
+
+        var otherOffers = await offers.GetOpenOffersForListingAsync(offer.ArtworkListingId, offer.Id);
+        foreach (var other in otherOffers)
+        {
+            other.Status = OfferStatus.Declined;
+            other.RespondedAtUtc = DateTime.UtcNow;
+        }
 
         var orderResult = await orders.CreateOrderFromOfferAsync(offer.ArtworkListingId, offer.BuyerId, agreedPrice);
         if (!orderResult.IsSuccess)
@@ -135,14 +144,10 @@ public class OfferService(
 
         offer.OrderId = orderResult.Value!.Id;
 
-        var otherOffers = await offers.GetOpenOffersForListingAsync(offer.ArtworkListingId, offer.Id);
-        foreach (var other in otherOffers)
+        if (!await TrySaveAsync())
         {
-            other.Status = OfferStatus.Declined;
-            other.RespondedAtUtc = DateTime.UtcNow;
+            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
         }
-
-        await offers.SaveChangesAsync();
 
         var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
         if (otherPartyId is int notifyUserId)
@@ -198,7 +203,11 @@ public class OfferService(
 
         offer.Status = OfferStatus.Declined;
         offer.RespondedAtUtc = DateTime.UtcNow;
-        await offers.SaveChangesAsync();
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
+        }
 
         var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
         if (otherPartyId is int notifyUserId)
@@ -256,7 +265,11 @@ public class OfferService(
         offer.CounterAmount = request.Amount;
         offer.CounterMessage = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim();
         offer.RespondedAtUtc = DateTime.UtcNow;
-        await offers.SaveChangesAsync();
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
+        }
 
         await notifications.NotifyAsync(
             offer.BuyerId,
@@ -304,6 +317,22 @@ public class OfferService(
         return null;
     }
 
+    private const string OfferChangedMessage =
+        "This offer was changed by someone else at the same time. Refresh it and try again.";
+
+    // Returns false when another request changed the same offer first.
+    private async Task<bool> TrySaveAsync()
+    {
+        try
+        {
+            await offers.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+    }
     private static OfferResponse ToResponse(Offer offer)
     {
         return new OfferResponse
