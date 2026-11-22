@@ -31,6 +31,7 @@ public class Order
     [Range(0.01, 1000000)]
     public decimal Price { get; set; }
 
+    [ConcurrencyCheck]
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
 
     [MaxLength(1000)]

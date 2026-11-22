@@ -32,6 +32,7 @@ public class Offer
     [MaxLength(1000)]
     public string? Message { get; set; }
 
+    [ConcurrencyCheck]
     public OfferStatus Status { get; set; } = OfferStatus.Pending;
 
     [Range(typeof(decimal), "0.01", "1000000")]
