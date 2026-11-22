@@ -11,5 +11,7 @@ public interface IOfferRepository
     Task<Offer?> GetByIdAsync(int id);
     Task<Offer?> GetByIdForUpdateAsync(int id);
     Task<List<Offer>> GetOpenOffersForListingAsync(int listingId, int exceptOfferId);
+    Task<List<Offer>> DeclineOpenOffersAsync(int listingId, int exceptOfferId);
+    Task DeclineIfOpenAsync(int offerId);
     Task SaveChangesAsync();
 }

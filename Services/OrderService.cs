@@ -67,13 +67,15 @@ public class OrderService : IOrderService
         if (result.IsSuccess)
         {
             var order = result.Value!;
+            // Offers submitted after openOffers was loaded are declined now that the artwork is reserved.
+            var lateOffers = await _offerRepository.DeclineOpenOffersAsync(request.ArtworkListingId, exceptOfferId: 0);
             await _notificationService.NotifyAsync(
                 order.SellerId,
                 NotificationType.OrderPlaced,
                 $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
                 $"/orders/{order.Id}");
 
-            foreach (var offer in openOffers.Where(offer => offer.BuyerId != buyerId))
+            foreach (var offer in openOffers.Concat(lateOffers).Where(offer => offer.BuyerId != buyerId))
             {
                 await _notificationService.NotifyAsync(
                     offer.BuyerId,

@@ -92,6 +92,38 @@ public class OfferRepository(ArtistoDbContext db) : IOfferRepository
             .ToListAsync();
     }
 
+        // Called after the listing stops being available, so it also catches offers
+    // that were inserted after an earlier list of open offers was read.
+    public async Task<List<Offer>> DeclineOpenOffersAsync(int listingId, int exceptOfferId)
+    {
+        var openOffers = await db.Offers
+            .AsNoTracking()
+            .Where(offer => offer.ArtworkListingId == listingId
+                && offer.Id != exceptOfferId
+                && (offer.Status == OfferStatus.Pending || offer.Status == OfferStatus.Countered))
+            .ToListAsync();
+
+        var now = DateTime.UtcNow;
+        await db.Offers
+            .Where(offer => offer.ArtworkListingId == listingId
+                && offer.Id != exceptOfferId
+                && (offer.Status == OfferStatus.Pending || offer.Status == OfferStatus.Countered))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(offer => offer.Status, OfferStatus.Declined)
+                .SetProperty(offer => offer.RespondedAtUtc, now));
+
+        return openOffers;
+    }
+    public async Task DeclineIfOpenAsync(int offerId)
+    {
+        var now = DateTime.UtcNow;
+        await db.Offers
+            .Where(offer => offer.Id == offerId
+                && (offer.Status == OfferStatus.Pending || offer.Status == OfferStatus.Countered))
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(offer => offer.Status, OfferStatus.Declined)
+                .SetProperty(offer => offer.RespondedAtUtc, now));
+    }
     public async Task SaveChangesAsync()
     {
         await db.SaveChangesAsync();
