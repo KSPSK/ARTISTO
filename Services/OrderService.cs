@@ -7,11 +7,16 @@ namespace ARTISTO.Services;
 public class OrderService : IOrderService
 {
     private readonly IOrderRepository _orderRepository;
+    private readonly IOfferRepository _offerRepository;
     private readonly INotificationService _notificationService;
 
-    public OrderService(IOrderRepository orderRepository, INotificationService notificationService)
+    public OrderService(
+        IOrderRepository orderRepository,
+        IOfferRepository offerRepository,
+        INotificationService notificationService)
     {
         _orderRepository = orderRepository;
+        _offerRepository = offerRepository;
         _notificationService = notificationService;
     }
 
@@ -48,16 +53,37 @@ public class OrderService : IOrderService
 
     public async Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
     {
+        // Once the artwork is bought directly, its open offers can no longer be accepted.
+        // They are changed here and saved together with the new order in one SaveChanges call.
+        var openOffers = await _offerRepository.GetOpenOffersForListingAsync(request.ArtworkListingId, exceptOfferId: 0);
+        foreach (var offer in openOffers)
+        {
+            offer.Status = OfferStatus.Declined;
+            offer.RespondedAtUtc = DateTime.UtcNow;
+        }
+
         var result = await PlaceOrderAsync(request.ArtworkListingId, buyerId, agreedPrice: null, request.PickupNotes);
 
         if (result.IsSuccess)
         {
             var order = result.Value!;
+            // Offers submitted after openOffers was loaded are declined now that the artwork is reserved.
+            var lateBuyerIds = await _offerRepository.DeclineOpenOffersIfListingUnavailableAsync(request.ArtworkListingId, exceptOfferId: 0);
             await _notificationService.NotifyAsync(
                 order.SellerId,
                 NotificationType.OrderPlaced,
                 $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
                 $"/orders/{order.Id}");
+
+            var declinedBuyerIds = openOffers.Select(offer => offer.BuyerId).Concat(lateBuyerIds);
+            foreach (var declinedBuyerId in declinedBuyerIds.Where(id => id != buyerId))
+            {
+                await _notificationService.NotifyAsync(
+                    declinedBuyerId,
+                    NotificationType.OfferDeclined,
+                    $"Your offer for \"{order.ArtworkTitle}\" was declined because the artwork was bought by another buyer.",
+                    "/offers");
+            }
         }
 
         return result;
@@ -165,7 +191,10 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.HandedOver;
         order.HandedOverAtUtc = DateTime.UtcNow;
 
-        await _orderRepository.SaveChangesAsync();
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         await _notificationService.NotifyAsync(
             order.BuyerId,
@@ -202,7 +231,10 @@ public class OrderService : IOrderService
             order.ArtworkListing.Status = ArtworkListingStatus.Sold;
         }
 
-        await _orderRepository.SaveChangesAsync();
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         await _notificationService.NotifyAsync(
             order.SellerId,
@@ -243,7 +275,10 @@ public class OrderService : IOrderService
             order.ArtworkListing.Status = ArtworkListingStatus.Available;
         }
 
-        await _orderRepository.SaveChangesAsync();
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         var otherPartyId = userId == order.BuyerId ? order.SellerId : order.BuyerId;
         await _notificationService.NotifyAsync(
@@ -254,6 +289,22 @@ public class OrderService : IOrderService
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
+    private const string OrderChangedMessage =
+        "This order was changed by someone else at the same time. Refresh it and try again.";
+
+    // Returns false when another request changed the same order or listing first.
+    private async Task<bool> TrySaveAsync()
+    {
+        try
+        {
+            await _orderRepository.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+    }
     public static OrderResponse ToResponse(Order order)
     {
         return new OrderResponse

@@ -97,6 +97,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> ConfirmHandover(int id)
     {
         if (!User.TryGetUserId(out var userId))
@@ -112,6 +113,7 @@ public class OrdersController : ControllerBase
             ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
             ServiceStatus.Forbidden => Forbid(),
             ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
@@ -122,6 +124,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> ConfirmReceipt(int id)
     {
         if (!User.TryGetUserId(out var userId))
@@ -137,6 +140,7 @@ public class OrdersController : ControllerBase
             ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
             ServiceStatus.Forbidden => Forbid(),
             ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }
@@ -147,6 +151,7 @@ public class OrdersController : ControllerBase
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<OrderResponse>> Cancel(int id, CancelOrderRequest? request)
     {
         if (!User.TryGetUserId(out var userId))
@@ -162,6 +167,7 @@ public class OrdersController : ControllerBase
             ServiceStatus.NotFound => NotFound(new ApiErrorResponse(result.ErrorMessage!)),
             ServiceStatus.Forbidden => Forbid(),
             ServiceStatus.BadRequest => BadRequest(new ApiErrorResponse(result.ErrorMessage!)),
+            ServiceStatus.Conflict => Conflict(new ApiErrorResponse(result.ErrorMessage!)),
             _ => StatusCode(StatusCodes.Status500InternalServerError)
         };
     }

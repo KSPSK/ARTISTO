@@ -92,6 +92,41 @@ public class OfferRepository(ArtistoDbContext db) : IOfferRepository
             .ToListAsync();
     }
 
+    // Declines the remaining open offers only while the listing is still reserved or sold.
+    // The listing check is part of the same UPDATE, so a cancellation that frees the artwork
+    // in the meantime cannot get valid new offers declined. Returns the buyers whose offers were declined.
+    public async Task<List<int>> DeclineOpenOffersIfListingUnavailableAsync(int listingId, int exceptOfferId)
+    {
+        return await db.Database.SqlQuery<int>($"""
+            UPDATE "Offers"
+            SET "Status" = {(int)OfferStatus.Declined}, "RespondedAtUtc" = {DateTime.UtcNow}
+            WHERE "ArtworkListingId" = {listingId}
+                AND "Id" <> {exceptOfferId}
+                AND "Status" IN ({(int)OfferStatus.Pending}, {(int)OfferStatus.Countered})
+                AND EXISTS (
+                    SELECT 1 FROM "ArtworkListings" AS listing
+                    WHERE listing."Id" = {listingId}
+                        AND listing."Status" <> {(int)ArtworkListingStatus.Available})
+            RETURNING "BuyerId"
+            """).ToListAsync();
+    }
+
+    // Declines one offer only if its listing is no longer available. Returns true if it was declined.
+    public async Task<bool> DeclineIfListingUnavailableAsync(int offerId)
+    {
+        var declined = await db.Database.ExecuteSqlAsync($"""
+            UPDATE "Offers"
+            SET "Status" = {(int)OfferStatus.Declined}, "RespondedAtUtc" = {DateTime.UtcNow}
+            WHERE "Id" = {offerId}
+                AND "Status" IN ({(int)OfferStatus.Pending}, {(int)OfferStatus.Countered})
+                AND EXISTS (
+                    SELECT 1 FROM "ArtworkListings" AS listing
+                    WHERE listing."Id" = "Offers"."ArtworkListingId"
+                        AND listing."Status" <> {(int)ArtworkListingStatus.Available})
+            """);
+
+        return declined > 0;
+    }
     public async Task SaveChangesAsync()
     {
         await db.SaveChangesAsync();
