@@ -165,7 +165,10 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.HandedOver;
         order.HandedOverAtUtc = DateTime.UtcNow;
 
-        await _orderRepository.SaveChangesAsync();
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         await _notificationService.NotifyAsync(
             order.BuyerId,
@@ -202,7 +205,10 @@ public class OrderService : IOrderService
             order.ArtworkListing.Status = ArtworkListingStatus.Sold;
         }
 
-        await _orderRepository.SaveChangesAsync();
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         await _notificationService.NotifyAsync(
             order.SellerId,
@@ -243,7 +249,10 @@ public class OrderService : IOrderService
             order.ArtworkListing.Status = ArtworkListingStatus.Available;
         }
 
-        await _orderRepository.SaveChangesAsync();
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         var otherPartyId = userId == order.BuyerId ? order.SellerId : order.BuyerId;
         await _notificationService.NotifyAsync(
@@ -254,6 +263,22 @@ public class OrderService : IOrderService
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
+    private const string OrderChangedMessage =
+        "This order was changed by someone else at the same time. Refresh it and try again.";
+
+    // Returns false when another request changed the same order or listing first.
+    private async Task<bool> TrySaveAsync()
+    {
+        try
+        {
+            await _orderRepository.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return false;
+        }
+    }  
     public static OrderResponse ToResponse(Order order)
     {
         return new OrderResponse
