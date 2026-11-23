@@ -79,7 +79,7 @@ export class NavMenu extends Component {
                 </NavLink>
               </NavItem>
               <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/messages">
+                <NavLink tag={RouterNavLink} className="text-dark messages-nav-link" to="/messages">
                   Messages
                 </NavLink>
               </NavItem>
