@@ -266,7 +266,8 @@ export default function ArtworkListingDetails() {
           <div className="listing-details-actions">
             <button
               type="button"
-              className="btn btn-outline-primary"
+              className="listing-social-button"
+              aria-pressed={Boolean(listing.isLiked)}
               disabled={socialAction !== ""}
               onClick={() => toggleSocialAction("like")}
             >
@@ -275,7 +276,8 @@ export default function ArtworkListingDetails() {
 
             <button
               type="button"
-              className="btn btn-outline-secondary"
+              className="listing-social-button"
+              aria-pressed={Boolean(listing.isSaved)}
               disabled={socialAction !== ""}
               onClick={() => toggleSocialAction("favorite")}
             >
