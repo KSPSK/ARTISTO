@@ -75,48 +75,22 @@ body:has(.favorites-page) header > .navbar > .container {
   font-size: 0.9rem;
 }
 
-.favorite-card .favorite-price {
-  margin-bottom: 0.85rem;
-  color: #111;
-  font-family: system-ui, sans-serif;
-  font-size: 1.05rem;
-  font-weight: 600;
-  font-variant-numeric: lining-nums tabular-nums;
+.favorite-card .artwork-price {
+  color: #000000;
+  font-weight: 400;
 }
 
-.favorites-page .btn {
-  padding: 0.55rem 0.9rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+.favorite-card .artwork-open {
+  background: #000000;
+  border-color: #000000;
+  border-radius: 2px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 
-.favorites-page .btn-primary {
-  border-color: #111;
-  background: #111;
-  color: #fff;
-}
-
-.favorites-page .btn-primary:hover {
-  border-color: #333;
-  background: #333;
-}
-
-.favorites-page .btn-outline-secondary {
-  border-color: #111;
-  background: transparent;
-  color: #111;
-}
-
-.favorites-page .btn-outline-secondary:hover:not(:disabled) {
-  background: #111;
-  color: #fff;
-}
-
-.favorites-page .btn:focus-visible {
-  outline: 2px solid #111;
-  outline-offset: 2px;
-  box-shadow: none;
+.favorite-card .artwork-open:hover {
+  background: #222222;
+  border-color: #222222;
 }
 
 .favorites-empty {
