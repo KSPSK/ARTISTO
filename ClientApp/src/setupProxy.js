@@ -14,6 +14,7 @@ const context = [
   "/api/reviews",
   "/api/offers",
   "/api/conversations",
+  "/api/notifications",
   "/uploads",
 ];
 

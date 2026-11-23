@@ -12,6 +12,7 @@ import MyOffers from "./components/MyOffers";
 import OrderDetails from "./components/OrderDetails";
 import Favorites from "./components/Favorites";
 import { Conversations, Conversation } from "./components/Chat";
+import Notifications from "./components/Notifications";
 
 const AppRoutes = [
   {
@@ -78,6 +79,10 @@ const AppRoutes = [
     path: "/messages/:id",
     element: <Conversation />,
   },
+  {
+    path: "/notifications",
+    element: <Notifications />,
+  }
 ];
 
 export default AppRoutes;

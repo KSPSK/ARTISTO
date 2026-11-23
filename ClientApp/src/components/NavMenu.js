@@ -10,6 +10,7 @@ import {
 import { Link } from "react-router-dom";
 import "./NavMenu.css";
 import logo from "../images/artisto_logo.png";
+import { NotificationsNavItem } from "./Notifications";
 
 export class NavMenu extends Component {
   static displayName = NavMenu.name;
@@ -82,6 +83,9 @@ export class NavMenu extends Component {
                   Messages
                 </NavLink>
               </NavItem>
+
+              <NotificationsNavItem />
+
               <NavItem>
                 <NavLink tag={Link} className="text-dark" to="/account">
                   Account
