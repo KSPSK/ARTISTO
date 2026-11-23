@@ -1,128 +1,218 @@
+body:has(.my-offers) {
+  background: #f4f4f4;
+}
+
+body:has(.my-offers) header > .navbar {
+  background: #fff;
+  box-shadow: none;
+}
+
+body:has(.my-offers) header > .navbar > .container,
 .my-offers {
-  max-width: 800px;
-  margin: 48px auto;
+  width: min(100%, 1100px);
+  margin-inline: auto;
+}
+
+.my-offers {
+  padding-block: clamp(1.25rem, 4vw, 3rem) 4rem;
+  color: #111;
 }
 
 .my-offers h1 {
-  font-family: Georgia, serif;
-  font-size: 50px;
+  margin: 0 0 1.75rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.5rem, 5.5vw, 4rem);
   font-weight: 400;
-  margin-bottom: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
 }
 
 .my-offers-lead,
 .my-offers-empty,
-.my-offers-meta,
-.my-offers-message {
-  color: #777777;
+.my-offers-meta {
+  color: #595959;
 }
 
 .my-offers-tabs {
   display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .my-offers-tabs button {
-  padding: 8px 20px;
-  border: 1px solid #000000;
-  background-color: #ffffff;
-  color: #000000;
+  padding: 0.7rem 1.35rem;
+  border: 1px solid #111;
+  background: transparent;
+  color: #111;
   text-transform: uppercase;
 }
 
+.my-offers-tabs button:hover {
+  background: #e8e8e8;
+}
+
 .my-offers-tabs button.active {
-  background-color: #000000;
-  color: #ffffff;
+  background: #111;
+  color: #fff;
 }
 
 .my-offers-list {
-  list-style: none;
-  padding: 0;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .my-offers-item {
-  padding: 16px 0;
-  border-bottom: 1px solid #dddddd;
+  padding-block: 1.15rem;
+  border-bottom: 1px solid #d7d7d7;
+  overflow-wrap: anywhere;
 }
 
 .my-offers-row {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  gap: 1rem;
+}
+
+.my-offers-title,
+.my-offers-price {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  color: #111;
 }
 
 .my-offers-title {
-  font-family: Georgia, serif;
-  font-size: 20px;
-  color: #000000;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  text-decoration: underline;
+}
+
+.my-offers-title:hover {
+  color: #444;
 }
 
 .my-offers-meta {
-  margin: 4px 0 0;
-  font-size: 14px;
+  margin: 0.3rem 0 0;
+  font-size: 0.9rem;
 }
 
 .my-offers-right {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
 .my-offers-price {
-  font-weight: 600;
+  font-family: system-ui, sans-serif;
+  font-size: 1.3rem;
+  font-weight: 500;
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: 1.25;
 }
 
 .my-offers-status {
-  padding: 2px 10px;
-  font-size: 12px;
+  padding: 0.15rem 0.65rem;
+  border: 1px solid #111;
+  border-radius: 2px;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  border: 1px solid #000000;
-}
-
-.my-offers-status-pending {
-  background-color: #fff3cd;
-}
-
-.my-offers-status-countered {
-  background-color: #cfe2ff;
-}
-
-.my-offers-status-accepted {
-  background-color: #d1e7dd;
-}
-
-.my-offers-status-declined {
-  background-color: #eeeeee;
-  color: #777777;
 }
 
 .my-offers-message,
 .my-offers-counter {
-  margin: 8px 0 0;
-  font-size: 14px;
+  margin: 0.65rem 0 0;
+  font-size: 0.9rem;
+}
+
+.my-offers-message {
+  font-style: italic;
 }
 
 .my-offers-actions {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.my-offers-item .btn {
+  padding: 0.42rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.my-offers-item .btn-primary,
+.my-offers-item > a.btn-outline-primary {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.my-offers-item .btn-primary:hover:not(:disabled),
+.my-offers-item > a.btn-outline-primary:hover {
+  border-color: #333;
+  background: #333;
+  color: #fff;
+}
+
+.my-offers-actions .btn-outline-primary {
+  border-color: #111;
+  background: transparent;
+  color: #111;
+}
+
+.my-offers-actions .btn-outline-danger {
+  border-color: #777;
+  background: transparent;
+  color: #595959;
+}
+
+.my-offers-actions .btn-outline-primary:hover:not(:disabled),
+.my-offers-actions .btn-outline-danger:hover:not(:disabled) {
+  background: #e8e8e8;
+  color: #111;
+}
+
+.my-offers-item > a.btn {
+  margin-top: 0.75rem;
 }
 
 .my-offers-counter-form {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.4rem;
   max-width: 320px;
-  margin-top: 12px;
-  font-size: 14px;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
 }
 
 .my-offers-error {
-  margin: 8px 0 0;
-  color: #dc3545;
-  font-size: 14px;
+  margin: 0.5rem 0 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+
+.navbar .my-offers-nav-link[aria-current="page"] {
+  text-decoration: underline;
+  text-underline-offset: 0.4em;
+  text-decoration-thickness: 1px;
+}
+
+@media (max-width: 575px) {
+  .my-offers-row {
+    gap: 0.65rem;
+  }
+
+  .my-offers-title {
+    font-size: 1.25rem;
+  }
+
+  .my-offers-price {
+    font-size: 1.1rem;
+  }
 }

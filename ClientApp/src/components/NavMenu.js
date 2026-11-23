@@ -7,7 +7,7 @@ import {
   NavItem,
   NavLink,
 } from "reactstrap";
-import { Link } from "react-router-dom";
+import { Link, NavLink as RouterNavLink } from "react-router-dom";
 import "./NavMenu.css";
 import logo from "../images/artisto_logo.png";
 import { NotificationsNavItem } from "./Notifications";
@@ -74,7 +74,7 @@ export class NavMenu extends Component {
                 </NavLink>
               </NavItem>
               <NavItem>
-                <NavLink tag={Link} className="text-dark" to="/offers">
+                <NavLink tag={RouterNavLink} className="text-dark my-offers-nav-link" to="/offers">
                   My offers
                 </NavLink>
               </NavItem>
