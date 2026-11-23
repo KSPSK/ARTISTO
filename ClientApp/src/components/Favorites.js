@@ -103,32 +103,25 @@ export default function Favorites() {
       ) : (
         <>
           <div className="favorites-grid">
-            {favorites.map((artwork) => {
-              const formattedPrice = new Intl.NumberFormat("lt-LT", {
-                style: "currency",
-                currency: "EUR",
-              }).format(artwork.price);
+            {favorites.map((artwork) => (
+              <article className="favorite-card" key={artwork.id}>
+                <ListingImage
+                  imageUrl={artwork.imageUrl}
+                  title={artwork.title}
+                />
 
-              return (
-                <article className="favorite-card" key={artwork.id}>
-                  <ListingImage
-                    imageUrl={artwork.imageUrl}
-                    title={artwork.title}
-                  />
+                <h2>{artwork.title}</h2>
+                <p>{artwork.creatorName}</p>
+                <p className="artwork-price">{artwork.price} €</p>
 
-                  <h2>{artwork.title}</h2>
-                  <p>{artwork.creatorName}</p>
-                  <p className="favorite-price">{formattedPrice}</p>
-
-                  <Link
-                    to={`/listings/${artwork.id}`}
-                    className="btn btn-primary"
-                  >
-                    Open artwork
-                  </Link>
-                </article>
-              );
-            })}
+                <Link
+                  to={`/listings/${artwork.id}`}
+                  className="btn btn-primary artwork-open"
+                >
+                  Open listing
+                </Link>
+              </article>
+            ))}
           </div>
 
           {totalPages > 1 && (

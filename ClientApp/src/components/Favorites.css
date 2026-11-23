@@ -25,8 +25,22 @@
   font-size: 1.25rem;
 }
 
-.favorite-price {
-  font-weight: 600;
+.favorite-card .artwork-price {
+  color: #000000;
+  font-weight: 400;
+}
+
+.favorite-card .artwork-open {
+  background: #000000;
+  border-color: #000000;
+  border-radius: 2px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.favorite-card .artwork-open:hover {
+  background: #222222;
+  border-color: #222222;
 }
 
 .favorites-empty {
