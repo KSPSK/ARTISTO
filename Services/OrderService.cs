@@ -60,6 +60,7 @@ public class OrderService : IOrderService
     {
         // Keep the order, offer changes and database notifications in one transaction.
         await using var transaction = await _db.Database.BeginTransactionAsync();
+        await _db.LockListingForPurchaseAsync(request.ArtworkListingId);
 
         var openOffers = await _offerRepository.GetOpenOffersForListingAsync(
             request.ArtworkListingId,

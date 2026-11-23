@@ -1,5 +1,6 @@
 using ARTISTO.Data;
 using ARTISTO.Models;
+using ARTISTO.Services;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;
@@ -9,7 +10,7 @@ namespace ARTISTO.Tests;
 public sealed class PostgreSqlMigrationTests
 {
     [PostgreSqlMigrationFact]
-    public async Task Migrations_apply_to_an_empty_database_and_enforce_social_and_review_constraints()
+    public async Task Migrated_database_enforces_constraints_and_serializes_reservation_with_offer_creation()
     {
         var settings = new NpgsqlConnectionStringBuilder(
             Environment.GetEnvironmentVariable(PostgreSqlMigrationFactAttribute.ConnectionVariable))
@@ -36,7 +37,7 @@ public sealed class PostgreSqlMigrationTests
 
             var buyer = new User { Username = "buyer", DisplayName = "Buyer", Password = "unused", City = "Vilnius" };
             var seller = new User { Username = "seller", DisplayName = "Seller", Password = "unused", City = "Vilnius" };
-            var listing = new ArtworkListing { Title = "Painting", CreatorName = seller.DisplayName, Price = 10, User = seller };
+            var listing = new ArtworkListing { Title = "Painting", CreatorName = seller.DisplayName, Price = 10, User = seller, LocalPickupAvailable = true };
             var firstOrder = new Order { Buyer = buyer, Seller = seller, ArtworkListing = listing, Price = listing.Price, Status = OrderStatus.Completed };
             var secondOrder = new Order { Buyer = buyer, Seller = seller, ArtworkListing = listing, Price = listing.Price, Status = OrderStatus.Completed };
             db.Orders.AddRange(firstOrder, secondOrder);
@@ -44,12 +45,44 @@ public sealed class PostgreSqlMigrationTests
 
             await AssertSocialConstraints(db, buyer.Id, seller.Id, listing.Id);
             await AssertReviewConstraints(db, firstOrder, secondOrder);
+            await AssertOfferWaitsForReservation(options, listing.Id, buyer.Id);
         }
         finally
         {
             await using var drop = new NpgsqlCommand($"DROP DATABASE {databaseName}", admin);
             await drop.ExecuteNonQueryAsync();
         }
+    }
+
+    private static async Task AssertOfferWaitsForReservation(
+        DbContextOptions<ArtistoDbContext> options, int listingId, int buyerId)
+    {
+        await using var purchaseDb = new ArtistoDbContext(options);
+        await using var purchase = await purchaseDb.Database.BeginTransactionAsync();
+        await purchaseDb.LockListingForPurchaseAsync(listingId);
+        var listing = await purchaseDb.ArtworkListings.SingleAsync(item => item.Id == listingId);
+        listing.Status = ArtworkListingStatus.Reserved;
+        await purchaseDb.SaveChangesAsync();
+
+        await using var offerDb = new ArtistoDbContext(options);
+        await offerDb.Database.OpenConnectionAsync();
+        await offerDb.Database.ExecuteSqlRawAsync("SET lock_timeout = '1s'");
+        var offers = new OfferRepository(offerDb);
+        var notifications = new DatabaseNotificationService(offerDb);
+        var orders = new OrderService(new OrderRepository(offerDb), offers, notifications, offerDb);
+        var service = new OfferService(offers, orders, notifications, offerDb);
+        var request = new CreateOfferRequest { ArtworkListingId = listingId, Amount = 6m };
+
+        var error = await Assert.ThrowsAsync<PostgresException>(
+            () => service.CreateOfferAsync(request, buyerId, CancellationToken.None));
+        Assert.Equal(PostgresErrorCodes.LockNotAvailable, error.SqlState);
+
+        await purchase.CommitAsync();
+
+        var result = await service.CreateOfferAsync(request, buyerId, CancellationToken.None);
+        Assert.Equal(ServiceStatus.Conflict, result.Status);
+        Assert.False(await offerDb.Offers.AnyAsync(offer => offer.ArtworkListingId == listingId));
+        Assert.False(await offerDb.Notifications.AnyAsync());
     }
 
     private static async Task AssertSocialConstraints(ArtistoDbContext db, int buyerId, int sellerId, int listingId)

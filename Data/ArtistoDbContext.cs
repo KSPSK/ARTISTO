@@ -20,6 +20,19 @@ public class ArtistoDbContext : DbContext
     public DbSet<UserFollow> UserFollows => Set<UserFollow>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+
+    // PostgreSQL permits concurrent writers. Serialize offer creation and reservation
+    // on the listing row before either operation reads or writes its open offers.
+    // SQLite already serializes writers when the surrounding transaction begins.
+    public async Task LockListingForPurchaseAsync(int listingId, CancellationToken cancellationToken = default)
+    {
+        if (Database.IsNpgsql())
+        {
+            await Database.ExecuteSqlAsync($"""
+                SELECT "Id" FROM "ArtworkListings" WHERE "Id" = {listingId} FOR NO KEY UPDATE
+                """, cancellationToken);
+        }
+    }
     public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
