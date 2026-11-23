@@ -4,14 +4,12 @@ namespace ARTISTO.Extensions;
 
 public static class ArtworkListingExtensions
 {
-    // Filters listings in memory by category and maximum price.
-    public static IEnumerable<ArtworkListing> Filter(
-        this IEnumerable<ArtworkListing> listings,
+    // Appends category and maximum price filters to the EF Core SQL query.
+    public static IQueryable<ArtworkListing> Filter(
+        this IQueryable<ArtworkListing> query,
         ArtworkCategory? category = null,
         decimal? maxPrice = null)
     {
-        var query = listings.AsEnumerable();
-
         if (category.HasValue)
         {
             query = query.Where(item => item.Category == category.Value);
@@ -21,7 +19,12 @@ public static class ArtworkListingExtensions
         {
             query = query.Where(item => item.Price <= maxPrice.Value);
         }
+        
+        if (category.HasValue || maxPrice.HasValue)
+        {
+            query = query.OrderBy(item => item.Price);
+        }
 
-        return query.OrderBy(item => item.Price).ToList();
+        return query;
     }
 }

@@ -1,3 +1,4 @@
+using ARTISTO.Extensions;
 using ARTISTO.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,9 +13,14 @@ public class ArtworkListingRepository : IArtworkListingRepository
         _context = context;
     }
 
-    public async Task<List<ArtworkListing>> GetAllAsync(string? search = null)
+    public async Task<List<ArtworkListing>> GetAllAsync(
+        string? search = null,
+        ArtworkCategory? category = null,
+        decimal? maxPrice = null)
     {
-        var query = _context.ArtworkListings.AsQueryable();
+        var query = _context.ArtworkListings
+            .AsNoTracking()
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -23,6 +29,10 @@ public class ArtworkListingRepository : IArtworkListingRepository
                 (item.Title != null && EF.Functions.ILike(item.Title, $"%{trimmed}%")) ||
                 (item.CreatorName != null && EF.Functions.ILike(item.CreatorName, $"%{trimmed}%")));
         }
+
+        query = query.Filter(
+            category: category,
+            maxPrice: maxPrice);
 
         return await query.ToListAsync();
     }

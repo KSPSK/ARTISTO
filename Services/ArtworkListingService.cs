@@ -1,5 +1,4 @@
 using ARTISTO.Data;
-using ARTISTO.Extensions;
 using ARTISTO.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -22,16 +21,7 @@ public class ArtworkListingService : IArtworkListingService
         ArtworkCategory? category = null,
         decimal? maxPrice = null)
     {
-        var listings = await _repository.GetAllAsync(search);
-
-        if (category.HasValue || maxPrice.HasValue)
-        {
-            return listings.Filter(
-                category: category,
-                maxPrice: maxPrice);
-        }
-
-        return listings;
+        return await _repository.GetAllAsync(search, category, maxPrice);
     }
 
     public async Task<ArtworkListing?> GetByIdAsync(int id)

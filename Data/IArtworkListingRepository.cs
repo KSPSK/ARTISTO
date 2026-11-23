@@ -4,7 +4,10 @@ namespace ARTISTO.Data;
 
 public interface IArtworkListingRepository
 {
-    Task<List<ArtworkListing>> GetAllAsync(string? search = null);
+    Task<List<ArtworkListing>> GetAllAsync(
+        string? search = null,
+        ArtworkCategory? category = null,
+        decimal? maxPrice = null);
     Task<ArtworkListing?> GetByIdAsync(int id);
     Task<bool> HasOrdersAsync(int id);
     Task<bool> UserExistsAsync(int userId);
