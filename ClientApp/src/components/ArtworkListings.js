@@ -29,6 +29,7 @@ export function ArtworkListings() {
   const [retryCount, setRetryCount] = useState(0);
   const message = location.state?.message;
   const filtersActive = listingFiltersActive(filters);
+  const listingsUrl = artworkListingsApiUrl(filters);
 
   useEffect(() => {
     setSearchInput(filters.q);
@@ -42,9 +43,7 @@ export function ArtworkListings() {
     setStatus("loading");
     setErrorMessage("");
 
-    const url = artworkListingsApiUrl(filters);
-
-    fetch(url, { signal: controller.signal })
+    fetch(listingsUrl, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) {
           throw new Error(
@@ -65,7 +64,7 @@ export function ArtworkListings() {
       });
 
     return () => controller.abort();
-  }, [filters.q, filters.category, filters.maxPrice, retryCount]);
+  }, [listingsUrl, retryCount]);
 
   function handleSearch(event) {
     event.preventDefault();
