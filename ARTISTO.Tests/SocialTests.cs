@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using ARTISTO.Data;
 using ARTISTO.Models;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
@@ -29,6 +30,7 @@ public sealed class SocialApp : WebApplicationFactory<Program>
         builder.UseEnvironment("Testing");
         builder.ConfigureServices(services =>
         {
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.RemoveAll<DbContextOptions<ArtistoDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<ArtistoDbContext>>();
             services.AddDbContext<ArtistoDbContext>(options => options

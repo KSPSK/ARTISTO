@@ -9,6 +9,9 @@ public interface IArtworkListingRepository
         ArtworkCategory? category = null,
         decimal? maxPrice = null);
     Task<ArtworkListing?> GetByIdAsync(int id);
+    Task<ArtworkImage?> GetImageAsync(int id);
+    Task SetImageAsync(ArtworkImage image);
+    Task RemoveImageAsync(int id);
     Task<bool> HasOrdersAsync(int id);
     Task<bool> UserExistsAsync(int userId);
     Task AddAsync(ArtworkListing listing);

@@ -2,6 +2,8 @@ using ARTISTO.Data;
 using ARTISTO.Models;
 using ARTISTO.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
 using Xunit;
 
@@ -10,7 +12,59 @@ namespace ARTISTO.Tests;
 public sealed class PostgreSqlMigrationTests
 {
     [PostgreSqlMigrationFact]
-    public async Task Migrated_database_enforces_constraints_and_serializes_reservation_with_offer_creation()
+    public Task Migrated_database_enforces_constraints_and_serializes_reservation_with_offer_creation() =>
+        WithTestDatabaseAsync(async options =>
+        {
+            await using var db = new ArtistoDbContext(options);
+
+            await db.Database.MigrateAsync();
+            Assert.Empty(await db.Database.GetPendingMigrationsAsync());
+
+            var buyer = new User { Username = "buyer", DisplayName = "Buyer", Password = "unused", City = "Vilnius" };
+            var seller = new User { Username = "seller", DisplayName = "Seller", Password = "unused", City = "Vilnius" };
+            var listing = new ArtworkListing { Title = "Painting", CreatorName = seller.DisplayName, Price = 10, User = seller, LocalPickupAvailable = true };
+            var firstOrder = new Order { Buyer = buyer, Seller = seller, ArtworkListing = listing, Price = listing.Price, Status = OrderStatus.Completed };
+            var secondOrder = new Order { Buyer = buyer, Seller = seller, ArtworkListing = listing, Price = listing.Price, Status = OrderStatus.Completed };
+            db.Orders.AddRange(firstOrder, secondOrder);
+            await db.SaveChangesAsync();
+
+            await AssertSocialConstraints(db, buyer.Id, seller.Id, listing.Id);
+            await AssertReviewConstraints(db, firstOrder, secondOrder);
+            await AssertOfferWaitsForReservation(options, listing.Id, buyer.Id);
+        });
+
+    [PostgreSqlMigrationFact]
+    public Task Artwork_image_migration_clears_legacy_urls_and_creates_cascading_storage() =>
+        WithTestDatabaseAsync(async options =>
+        {
+            await using var db = new ArtistoDbContext(options);
+            await db.GetService<IMigrator>().MigrateAsync("20261123105647_AddNotifications");
+            var legacy = new ArtworkListing { Title = "Legacy", CreatorName = "Artist", Price = 10, ImageUrl = "/uploads/artworks/old.png" };
+            var external = new ArtworkListing { Title = "External", CreatorName = "Artist", Price = 10, ImageUrl = "https://example.com/image.png" };
+            db.ArtworkListings.AddRange(legacy, external);
+            await db.SaveChangesAsync();
+
+            await db.Database.MigrateAsync();
+            db.ChangeTracker.Clear();
+            Assert.Null((await db.ArtworkListings.FindAsync(legacy.Id))!.ImageUrl);
+            Assert.Equal(external.ImageUrl, (await db.ArtworkListings.FindAsync(external.Id))!.ImageUrl);
+
+            var images = new ArtworkListingRepository(db);
+            var image = new ArtworkImage { ArtworkListingId = legacy.Id, Content = [1, 2, 3], ContentType = "image/png" };
+            await images.SetImageAsync(image);
+            await db.SaveChangesAsync();
+            var replacement = new ArtworkImage { ArtworkListingId = legacy.Id, Content = [4, 5, 6], ContentType = "image/jpeg" };
+            await images.SetImageAsync(replacement);
+            var stored = await images.GetImageAsync(legacy.Id);
+            Assert.Equal(replacement.Content, stored!.Content);
+            Assert.Equal(replacement.ContentType, stored.ContentType);
+
+            db.ChangeTracker.Clear();
+            await db.ArtworkListings.Where(listing => listing.Id == legacy.Id).ExecuteDeleteAsync();
+            Assert.Null(await images.GetImageAsync(legacy.Id));
+        });
+
+    private static async Task WithTestDatabaseAsync(Func<DbContextOptions<ArtistoDbContext>, Task> test)
     {
         var settings = new NpgsqlConnectionStringBuilder(
             Environment.GetEnvironmentVariable(PostgreSqlMigrationFactAttribute.ConnectionVariable))
@@ -30,22 +84,7 @@ public sealed class PostgreSqlMigrationTests
             var options = new DbContextOptionsBuilder<ArtistoDbContext>()
                 .UseNpgsql(settings.ConnectionString)
                 .Options;
-            await using var db = new ArtistoDbContext(options);
-
-            await db.Database.MigrateAsync();
-            Assert.Empty(await db.Database.GetPendingMigrationsAsync());
-
-            var buyer = new User { Username = "buyer", DisplayName = "Buyer", Password = "unused", City = "Vilnius" };
-            var seller = new User { Username = "seller", DisplayName = "Seller", Password = "unused", City = "Vilnius" };
-            var listing = new ArtworkListing { Title = "Painting", CreatorName = seller.DisplayName, Price = 10, User = seller, LocalPickupAvailable = true };
-            var firstOrder = new Order { Buyer = buyer, Seller = seller, ArtworkListing = listing, Price = listing.Price, Status = OrderStatus.Completed };
-            var secondOrder = new Order { Buyer = buyer, Seller = seller, ArtworkListing = listing, Price = listing.Price, Status = OrderStatus.Completed };
-            db.Orders.AddRange(firstOrder, secondOrder);
-            await db.SaveChangesAsync();
-
-            await AssertSocialConstraints(db, buyer.Id, seller.Id, listing.Id);
-            await AssertReviewConstraints(db, firstOrder, secondOrder);
-            await AssertOfferWaitsForReservation(options, listing.Id, buyer.Id);
+            await test(options);
         }
         finally
         {
@@ -59,7 +98,7 @@ public sealed class PostgreSqlMigrationTests
     {
         await using var purchaseDb = new ArtistoDbContext(options);
         await using var purchase = await purchaseDb.Database.BeginTransactionAsync();
-        await purchaseDb.LockListingForPurchaseAsync(listingId);
+        await purchaseDb.LockListingAsync(listingId);
         var listing = await purchaseDb.ArtworkListings.SingleAsync(item => item.Id == listingId);
         listing.Status = ArtworkListingStatus.Reserved;
         await purchaseDb.SaveChangesAsync();

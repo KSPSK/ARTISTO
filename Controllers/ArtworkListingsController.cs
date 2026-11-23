@@ -123,6 +123,18 @@ public class ArtworkListingsController : ControllerBase
         };
     }
 
+    [HttpGet("{id:int}/image")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiErrorResponse>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetImage(int id)
+    {
+        var image = await _listingService.GetImageAsync(id);
+        return image is null
+            ? NotFound(new ApiErrorResponse($"Artwork listing {id} has no image."))
+            : File(image.Content, image.ContentType);
+    }
+
     [Authorize]
     [HttpPost("{id:int}/image")]
     [ProducesResponseType<ArtworkListing>(StatusCodes.Status200OK)]

@@ -37,6 +37,25 @@ namespace ARTISTO.Migrations
                     b.ToTable("ArtworkFavorites");
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.ArtworkImage", b =>
+                {
+                    b.Property<int>("ArtworkListingId")
+                        .HasColumnType("integer");
+
+                    b.Property<byte[]>("Content")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("ArtworkListingId");
+
+                    b.ToTable("ArtworkImages");
+                });
+
             modelBuilder.Entity("ARTISTO.Models.ArtworkLike", b =>
                 {
                     b.Property<int>("UserId")
@@ -446,6 +465,15 @@ namespace ARTISTO.Migrations
                     b.HasOne("ARTISTO.Models.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.ArtworkImage", b =>
+                {
+                    b.HasOne("ARTISTO.Models.ArtworkListing", null)
+                        .WithOne()
+                        .HasForeignKey("ARTISTO.Models.ArtworkImage", "ArtworkListingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
