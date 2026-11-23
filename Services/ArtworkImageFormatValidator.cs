@@ -37,14 +37,14 @@ internal static class ArtworkImageFormatValidator
             using var image = Image.Load(data);
             return extension;
         }
-        catch (ImageFormatException)
+        catch (ImageFormatException exception)
         {
-            throw InvalidImage();
+            throw InvalidImage(exception);
         }
     }
 
-    private static ArtworkImageValidationException InvalidImage() =>
-        new("The image must be a valid JPEG, PNG, or WebP file.");
+    private static ArtworkImageValidationException InvalidImage(Exception? innerException = null) =>
+        new("The image must be a valid JPEG, PNG, or WebP file.", innerException);
 
     private static ArtworkImageValidationException ImageTooLarge(ImageDimensions dimensions) =>
         new(
