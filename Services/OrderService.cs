@@ -9,15 +9,18 @@ public class OrderService : IOrderService
     private readonly IOrderRepository _orderRepository;
     private readonly IOfferRepository _offerRepository;
     private readonly INotificationService _notificationService;
+    private readonly ArtistoDbContext _db;
 
     public OrderService(
         IOrderRepository orderRepository,
         IOfferRepository offerRepository,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        ArtistoDbContext db)
     {
         _orderRepository = orderRepository;
         _offerRepository = offerRepository;
         _notificationService = notificationService;
+        _db = db;
     }
 
     public async Task<ServiceResult<List<OrderResponse>>> GetMyOrdersAsync(int userId, string? role)
@@ -51,40 +54,66 @@ public class OrderService : IOrderService
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
-    public async Task<ServiceResult<OrderResponse>> CreateOrderAsync(CreateOrderRequest request, int buyerId)
+    public async Task<ServiceResult<OrderResponse>> CreateOrderAsync(
+        CreateOrderRequest request,
+        int buyerId)
     {
-        // Once the artwork is bought directly, its open offers can no longer be accepted.
-        // They are changed here and saved together with the new order in one SaveChanges call.
-        var openOffers = await _offerRepository.GetOpenOffersForListingAsync(request.ArtworkListingId, exceptOfferId: 0);
+        // Keep the order, offer changes and database notifications in one transaction.
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        await _db.LockListingForPurchaseAsync(request.ArtworkListingId);
+
+        var openOffers = await _offerRepository.GetOpenOffersForListingAsync(
+            request.ArtworkListingId,
+            exceptOfferId: 0);
+
         foreach (var offer in openOffers)
         {
             offer.Status = OfferStatus.Declined;
             offer.RespondedAtUtc = DateTime.UtcNow;
         }
 
-        var result = await PlaceOrderAsync(request.ArtworkListingId, buyerId, agreedPrice: null, request.PickupNotes);
+        var result = await PlaceOrderAsync(
+            request.ArtworkListingId,
+            buyerId,
+            agreedPrice: null,
+            pickupNotes: request.PickupNotes);
 
-        if (result.IsSuccess)
+        if (!result.IsSuccess)
         {
-            var order = result.Value!;
-            // Offers submitted after openOffers was loaded are declined now that the artwork is reserved.
-            var lateBuyerIds = await _offerRepository.DeclineOpenOffersIfListingUnavailableAsync(request.ArtworkListingId, exceptOfferId: 0);
-            await _notificationService.NotifyAsync(
-                order.SellerId,
-                NotificationType.OrderPlaced,
-                $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
-                $"/orders/{order.Id}");
-
-            var declinedBuyerIds = openOffers.Select(offer => offer.BuyerId).Concat(lateBuyerIds);
-            foreach (var declinedBuyerId in declinedBuyerIds.Where(id => id != buyerId))
-            {
-                await _notificationService.NotifyAsync(
-                    declinedBuyerId,
-                    NotificationType.OfferDeclined,
-                    $"Your offer for \"{order.ArtworkTitle}\" was declined because the artwork was bought by another buyer.",
-                    "/offers");
-            }
+            return result;
         }
+
+        var order = result.Value!;
+
+        // Also decline offers submitted after the initial list was loaded.
+        var lateBuyerIds =
+            await _offerRepository.DeclineOpenOffersIfListingUnavailableAsync(
+                request.ArtworkListingId,
+                exceptOfferId: 0);
+
+        await _notificationService.NotifyAsync(
+            order.SellerId,
+            NotificationType.OrderPlaced,
+            $"{order.BuyerDisplayName} ordered \"{order.ArtworkTitle}\".",
+            $"/orders/{order.Id}");
+
+        var declinedBuyerIds = openOffers
+            .Select(offer => offer.BuyerId)
+            .Concat(lateBuyerIds)
+            .Where(id => id != buyerId)
+            .Distinct();
+
+        foreach (var declinedBuyerId in declinedBuyerIds)
+        {
+            await _notificationService.NotifyAsync(
+                declinedBuyerId,
+                NotificationType.OfferDeclined,
+                $"Your offer for \"{order.ArtworkTitle}\" was declined because the artwork was bought by another buyer.",
+                "/offers");
+        }
+
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return result;
     }
@@ -148,7 +177,7 @@ public class OrderService : IOrderService
             Seller = seller,
             Price = agreedPrice ?? listing.Price,
             Status = OrderStatus.Pending,
-            PickupNotes =  pickupNotes?.Trim(),
+            PickupNotes = pickupNotes?.Trim(),
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -191,16 +220,17 @@ public class OrderService : IOrderService
         order.Status = OrderStatus.HandedOver;
         order.HandedOverAtUtc = DateTime.UtcNow;
 
-        if (!await TrySaveAsync())
-        {
-            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
-        }
-
         await _notificationService.NotifyAsync(
             order.BuyerId,
             NotificationType.OrderHandedOver,
             $"\"{order.ArtworkListing?.Title}\" was handed over. Please confirm that you received it.",
             $"/orders/{order.Id}");
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
+
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
@@ -231,16 +261,16 @@ public class OrderService : IOrderService
             order.ArtworkListing.Status = ArtworkListingStatus.Sold;
         }
 
-        if (!await TrySaveAsync())
-        {
-            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
-        }
-
         await _notificationService.NotifyAsync(
             order.SellerId,
             NotificationType.OrderCompleted,
             $"{order.Buyer?.DisplayName} confirmed receipt of \"{order.ArtworkListing?.Title}\". The order is completed.",
             $"/orders/{order.Id}");
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
 
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
@@ -275,17 +305,21 @@ public class OrderService : IOrderService
             order.ArtworkListing.Status = ArtworkListingStatus.Available;
         }
 
-        if (!await TrySaveAsync())
-        {
-            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
-        }
+        var otherPartyId = userId == order.BuyerId
+            ? order.SellerId
+            : order.BuyerId;
 
-        var otherPartyId = userId == order.BuyerId ? order.SellerId : order.BuyerId;
         await _notificationService.NotifyAsync(
             otherPartyId,
             NotificationType.OrderCancelled,
             $"The order for \"{order.ArtworkListing?.Title}\" was cancelled.",
             $"/orders/{order.Id}");
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OrderResponse>.Conflict(OrderChangedMessage);
+        }
+
         return ServiceResult<OrderResponse>.Success(ToResponse(order));
     }
 
@@ -305,6 +339,7 @@ public class OrderService : IOrderService
             return false;
         }
     }
+
     public static OrderResponse ToResponse(Order order)
     {
         return new OrderResponse

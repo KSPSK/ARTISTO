@@ -21,6 +21,20 @@ public class ArtistoDbContext : DbContext
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
+    // PostgreSQL permits concurrent writers. Serialize offer creation and reservation
+    // on the listing row before either operation reads or writes its open offers.
+    // SQLite already serializes writers when the surrounding transaction begins.
+    public async Task LockListingForPurchaseAsync(int listingId, CancellationToken cancellationToken = default)
+    {
+        if (Database.IsNpgsql())
+        {
+            await Database.ExecuteSqlAsync($"""
+                SELECT "Id" FROM "ArtworkListings" WHERE "Id" = {listingId} FOR NO KEY UPDATE
+                """, cancellationToken);
+        }
+    }
+    public DbSet<Notification> Notifications => Set<Notification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Conversation>(entity =>
@@ -122,5 +136,33 @@ public class ArtistoDbContext : DbContext
             .WithMany()
             .HasForeignKey(o => o.ArtworkListingId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.Property(x => x.Message)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.Link)
+                .HasMaxLength(500);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.CreatedAtUtc,
+                x.Id
+            });
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.ReadAtUtc
+            });
+        });
     }
 }
