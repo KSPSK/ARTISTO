@@ -20,6 +20,7 @@ public class ArtistoDbContext : DbContext
     public DbSet<UserFollow> UserFollows => Set<UserFollow>();
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -122,5 +123,33 @@ public class ArtistoDbContext : DbContext
             .WithMany()
             .HasForeignKey(o => o.ArtworkListingId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.Property(x => x.Message)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            entity.Property(x => x.Link)
+                .HasMaxLength(500);
+
+            entity.HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.CreatedAtUtc,
+                x.Id
+            });
+
+            entity.HasIndex(x => new
+            {
+                x.UserId,
+                x.ReadAtUtc
+            });
+        });
     }
 }

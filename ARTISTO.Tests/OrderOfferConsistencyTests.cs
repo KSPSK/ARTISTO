@@ -1,26 +1,36 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using ARTISTO.Services;
-using Xunit;
+using ARTISTO.Data;
 using ARTISTO.Models;
+using ARTISTO.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Xunit;
 
 namespace ARTISTO.Tests;
 
 public class OrderOfferConsistencyTests
 {
-    private static async Task<int> MakeOffer(HttpClient buyer, int listingId, decimal amount)
+    private static async Task<int> MakeOffer(
+        HttpClient buyer,
+        int listingId,
+        decimal amount)
     {
-        var response = await buyer.PostAsJsonAsync("/api/offers", new { artworkListingId = listingId, amount });
+        using var response = await buyer.PostAsJsonAsync(
+            "/api/offers",
+            new { artworkListingId = listingId, amount });
+
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("id").GetInt32();
     }
 
     private static async Task<string?> Status(HttpClient client, string url)
     {
-        return (await client.GetFromJsonAsync<JsonElement>(url)).GetProperty("status").GetString();
+        var body = await client.GetFromJsonAsync<JsonElement>(url);
+        return body.GetProperty("status").GetString();
     }
 
     [Fact]
@@ -28,21 +38,31 @@ public class OrderOfferConsistencyTests
     {
         using var app = new SocialApp();
         await app.Seed();
+
         using var seller = app.Client();
         using var offeringBuyer = app.Client();
         using var directBuyer = app.Client();
+
         await app.Register(seller);
         var offeringBuyerId = await app.Register(offeringBuyer);
         await app.Register(directBuyer);
+
         var listingId = await app.Artwork(seller, localPickupAvailable: true);
         var offerId = await MakeOffer(offeringBuyer, listingId, 6);
 
-        var order = await directBuyer.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
+        using var order = await directBuyer.PostAsJsonAsync(
+            "/api/orders",
+            new { artworkListingId = listingId });
 
         Assert.Equal(HttpStatusCode.Created, order.StatusCode);
         Assert.Equal("Declined", await Status(offeringBuyer, $"/api/offers/{offerId}"));
-        Assert.Equal(HttpStatusCode.BadRequest, (await seller.PostAsync($"/api/offers/{offerId}/accept", null)).StatusCode);
-        Assert.Contains(app.Notifications.Sent, n => n.UserId == offeringBuyerId && n.Type == NotificationType.OfferDeclined);
+
+        using var accept = await seller.PostAsync($"/api/offers/{offerId}/accept", null);
+        Assert.Equal(HttpStatusCode.BadRequest, accept.StatusCode);
+
+        Assert.Contains(app.Notifications.Sent, notification =>
+            notification.UserId == offeringBuyerId
+            && notification.Type == NotificationType.OfferDeclined);
     }
 
     [Fact]
@@ -50,14 +70,19 @@ public class OrderOfferConsistencyTests
     {
         using var app = new SocialApp();
         await app.Seed();
+
         using var seller = app.Client();
         using var buyer = app.Client();
+
         await app.Register(seller);
         await app.Register(buyer);
+
         var listingId = await app.Artwork(seller, localPickupAvailable: true);
         var offerId = await MakeOffer(buyer, listingId, 6);
 
-        var ownOrder = await seller.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
+        using var ownOrder = await seller.PostAsJsonAsync(
+            "/api/orders",
+            new { artworkListingId = listingId });
 
         Assert.Equal(HttpStatusCode.BadRequest, ownOrder.StatusCode);
         Assert.Equal("Pending", await Status(buyer, $"/api/offers/{offerId}"));
@@ -68,24 +93,47 @@ public class OrderOfferConsistencyTests
     {
         using var app = new SocialApp();
         await app.Seed();
+
         using var seller = app.Client();
         using var buyer = app.Client();
+
         await app.Register(seller);
         await app.Register(buyer);
+
         var listingId = await app.Artwork(seller, localPickupAvailable: true);
-        var placed = await buyer.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
-        var orderId = (await placed.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetInt32();
+
+        using var placed = await buyer.PostAsJsonAsync(
+            "/api/orders",
+            new { artworkListingId = listingId });
+        Assert.Equal(HttpStatusCode.Created, placed.StatusCode);
+
+        var orderBody = await placed.Content.ReadFromJsonAsync<JsonElement>();
+        var orderId = orderBody.GetProperty("id").GetInt32();
 
         var responses = await Task.WhenAll(
             seller.PostAsJsonAsync($"/api/orders/{orderId}/handover", new { }),
             buyer.PostAsJsonAsync($"/api/orders/{orderId}/cancel", new { }));
 
+        using var handover = responses[0];
+        using var cancellation = responses[1];
+
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
         Assert.Single(responses, response =>
             response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.BadRequest);
+
         var orderStatus = await Status(buyer, $"/api/orders/{orderId}");
         var listingStatus = await Status(buyer, $"/api/artworklistings/{listingId}");
-        Assert.Equal(orderStatus == "Cancelled" ? "Available" : "Reserved", listingStatus);
+
+        if (cancellation.StatusCode == HttpStatusCode.OK)
+        {
+            Assert.Equal("Cancelled", orderStatus);
+            Assert.Equal("Available", listingStatus);
+        }
+        else
+        {
+            Assert.Equal("HandedOver", orderStatus);
+            Assert.Equal("Reserved", listingStatus);
+        }
     }
 
     [Fact]
@@ -93,10 +141,13 @@ public class OrderOfferConsistencyTests
     {
         using var app = new SocialApp();
         await app.Seed();
+
         using var seller = app.Client();
         using var buyer = app.Client();
+
         await app.Register(seller);
         await app.Register(buyer);
+
         var listingId = await app.Artwork(seller, localPickupAvailable: true);
         var offerId = await MakeOffer(buyer, listingId, 6);
 
@@ -104,151 +155,145 @@ public class OrderOfferConsistencyTests
             seller.PostAsync($"/api/offers/{offerId}/accept", null),
             seller.PostAsync($"/api/offers/{offerId}/decline", null));
 
+        using var acceptance = responses[0];
+        using var decline = responses[1];
+
         Assert.Single(responses, response => response.StatusCode == HttpStatusCode.OK);
         Assert.Single(responses, response =>
             response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.BadRequest);
+
         var offerStatus = await Status(buyer, $"/api/offers/{offerId}");
         var sales = await seller.GetFromJsonAsync<JsonElement>("/api/orders?role=seller");
-        Assert.Equal(offerStatus == "Accepted" ? 1 : 0, sales.GetArrayLength());
+
+        if (acceptance.StatusCode == HttpStatusCode.OK)
+        {
+            Assert.Equal("Accepted", offerStatus);
+            Assert.Equal(1, sales.GetArrayLength());
+        }
+        else
+        {
+            Assert.Equal("Declined", offerStatus);
+            Assert.Equal(0, sales.GetArrayLength());
+        }
     }
 
-    [Fact]
-    public async Task Offer_submitted_while_a_direct_order_is_saving_does_not_stay_open()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Late_offer_is_declined_and_buyer_is_notified(bool acceptExistingOffer)
     {
-        var beforeOrderSave = new BeforeOrderSave();
-        using var app = new SocialApp { Interceptors = [beforeOrderSave] };
+        var interceptor = new InsertLateOfferBeforeOrderSave();
+
+        using var app = new SocialApp
+        {
+            Interceptors = [interceptor]
+        };
+
         await app.Seed();
-        using var seller = app.Client();
-        using var directBuyer = app.Client();
-        using var lateBuyer = app.Client();
-        await app.Register(seller);
-        await app.Register(directBuyer);
-        var lateBuyerId = await app.Register(lateBuyer);
-        var listingId = await app.Artwork(seller, localPickupAvailable: true);
 
-        var lateOfferId = 0;
-        beforeOrderSave.Action = async () => { lateOfferId = await MakeOffer(lateBuyer, listingId, 6); };
-
-        var order = await directBuyer.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
-
-        Assert.Equal(HttpStatusCode.Created, order.StatusCode);
-        Assert.NotEqual(0, lateOfferId);
-        Assert.Equal("Reserved", await Status(seller, $"/api/artworklistings/{listingId}"));
-        Assert.Equal("Declined", await Status(lateBuyer, $"/api/offers/{lateOfferId}"));
-        Assert.Contains(app.Notifications.Sent, n => n.UserId == lateBuyerId && n.Type == NotificationType.OfferDeclined);
-    }
-
-    [Fact]
-    public async Task Offer_submitted_while_another_offer_is_accepted_does_not_stay_open()
-    {
-        var beforeOrderSave = new BeforeOrderSave();
-        using var app = new SocialApp { Interceptors = [beforeOrderSave] };
-        await app.Seed();
         using var seller = app.Client();
         using var buyer = app.Client();
         using var lateBuyer = app.Client();
+
         await app.Register(seller);
         await app.Register(buyer);
         var lateBuyerId = await app.Register(lateBuyer);
+
         var listingId = await app.Artwork(seller, localPickupAvailable: true);
-        var offerId = await MakeOffer(buyer, listingId, 6);
 
-        var lateOfferId = 0;
-        beforeOrderSave.Action = async () => { lateOfferId = await MakeOffer(lateBuyer, listingId, 7); };
+        int? existingOfferId = acceptExistingOffer
+            ? await MakeOffer(buyer, listingId, 6)
+            : null;
 
-        var accepted = await seller.PostAsync($"/api/offers/{offerId}/accept", null);
+        interceptor.LateOffer = new Offer
+        {
+            ArtworkListingId = listingId,
+            BuyerId = lateBuyerId,
+            Amount = 7m
+        };
 
-        Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
-        Assert.NotEqual(0, lateOfferId);
+        using var order = existingOfferId is int offerId
+            ? await seller.PostAsync($"/api/offers/{offerId}/accept", null)
+            : await buyer.PostAsJsonAsync(
+                "/api/orders",
+                new { artworkListingId = listingId });
+
+        Assert.Equal(
+            acceptExistingOffer ? HttpStatusCode.OK : HttpStatusCode.Created,
+            order.StatusCode);
+
+        var lateOfferId = Assert.IsType<int>(interceptor.InsertedOfferId);
+
+        Assert.Equal("Reserved", await Status(seller, $"/api/artworklistings/{listingId}"));
         Assert.Equal("Declined", await Status(lateBuyer, $"/api/offers/{lateOfferId}"));
-        Assert.Contains(app.Notifications.Sent, n => n.UserId == lateBuyerId && n.Type == NotificationType.OfferDeclined);
+
+        Assert.Contains(app.Notifications.Sent, notification =>
+            notification.UserId == lateBuyerId
+            && notification.Type == NotificationType.OfferDeclined);
     }
 
     [Fact]
     public async Task Offer_submitted_after_the_order_is_cancelled_stays_open()
     {
-        var afterOrderSave = new AfterOrderSave();
-        using var app = new SocialApp { Interceptors = [afterOrderSave] };
+        using var app = new SocialApp();
         await app.Seed();
+
         using var seller = app.Client();
         using var directBuyer = app.Client();
         using var lateBuyer = app.Client();
+
         await app.Register(seller);
         await app.Register(directBuyer);
         await app.Register(lateBuyer);
+
         var listingId = await app.Artwork(seller, localPickupAvailable: true);
 
-        var lateOfferId = 0;
-        afterOrderSave.Action = async () =>
-        {
-            var orders = await directBuyer.GetFromJsonAsync<JsonElement>("/api/orders?role=buyer");
-            var orderId = orders[0].GetProperty("id").GetInt32();
-            var cancelled = await directBuyer.PostAsJsonAsync($"/api/orders/{orderId}/cancel", new { });
-            Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
-            lateOfferId = await MakeOffer(lateBuyer, listingId, 6);
-        };
-
-        var order = await directBuyer.PostAsJsonAsync("/api/orders", new { artworkListingId = listingId });
-
+        using var order = await directBuyer.PostAsJsonAsync(
+            "/api/orders",
+            new { artworkListingId = listingId });
         Assert.Equal(HttpStatusCode.Created, order.StatusCode);
-        Assert.NotEqual(0, lateOfferId);
+
+        var orderBody = await order.Content.ReadFromJsonAsync<JsonElement>();
+        var orderId = orderBody.GetProperty("id").GetInt32();
+
+        using var cancelled = await directBuyer.PostAsJsonAsync(
+            $"/api/orders/{orderId}/cancel",
+            new { });
+        Assert.Equal(HttpStatusCode.OK, cancelled.StatusCode);
+
+        var lateOfferId = await MakeOffer(lateBuyer, listingId, 6);
+
         Assert.Equal("Available", await Status(seller, $"/api/artworklistings/{listingId}"));
         Assert.Equal("Pending", await Status(lateBuyer, $"/api/offers/{lateOfferId}"));
     }
 
-    // Runs an action right before the first order is saved, so the race happens every time.
-    private sealed class BeforeOrderSave : SaveChangesInterceptor
+    private sealed class InsertLateOfferBeforeOrderSave : SaveChangesInterceptor
     {
         private int _ran;
 
-        public Func<Task>? Action { get; set; }
+        public Offer? LateOffer { get; set; }
+
+        public int? InsertedOfferId { get; private set; }
 
         public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
             DbContextEventData eventData,
             InterceptionResult<int> result,
             CancellationToken cancellationToken = default)
         {
-            var addsOrder = eventData.Context?.ChangeTracker.Entries<Order>()
-                .Any(entry => entry.State == EntityState.Added) == true;
-
-            if (addsOrder && Action is not null && Interlocked.Exchange(ref _ran, 1) == 0)
+            if (eventData.Context is not ArtistoDbContext db || LateOffer is not { } offer)
             {
-                await Action();
+                return result;
             }
 
-            return result;
-        }
-    }
+            var addsOrder = db.ChangeTracker.Entries<Order>()
+                .Any(entry => entry.State == EntityState.Added);
 
-    // Runs an action right after the first order is saved, before the purchase finishes its cleanup.
-    private sealed class AfterOrderSave : SaveChangesInterceptor
-    {
-        private int _orderSaving;
-        private int _ran;
-
-        public Func<Task>? Action { get; set; }
-
-        public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
-            DbContextEventData eventData,
-            InterceptionResult<int> result,
-            CancellationToken cancellationToken = default)
-        {
-            if (eventData.Context?.ChangeTracker.Entries<Order>().Any(entry => entry.State == EntityState.Added) == true)
+            if (addsOrder && Interlocked.Exchange(ref _ran, 1) == 0)
             {
-                Interlocked.Exchange(ref _orderSaving, 1);
-            }
-
-            return base.SavingChangesAsync(eventData, result, cancellationToken);
-        }
-
-        public override async ValueTask<int> SavedChangesAsync(
-            SaveChangesCompletedEventData eventData,
-            int result,
-            CancellationToken cancellationToken = default)
-        {
-            if (_orderSaving == 1 && Action is not null && Interlocked.Exchange(ref _ran, 1) == 0)
-            {
-                await Action();
+                // Use the current transaction so the late insert does not wait
+                // for a second SQLite writer while this save is paused.
+                var repository = new OfferRepository(db);
+                InsertedOfferId = await repository.TryInsertAsync(offer, cancellationToken);
             }
 
             return result;

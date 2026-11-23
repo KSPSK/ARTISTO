@@ -7,7 +7,8 @@ namespace ARTISTO.Services;
 public class OfferService(
     IOfferRepository offers,
     IOrderService orders,
-    INotificationService notifications) : IOfferService
+    INotificationService notifications,
+    ArtistoDbContext db) : IOfferService
 {
     public async Task<ServiceResult<List<OfferResponse>>> GetMyOffersAsync(int userId, string? role)
     {
@@ -62,6 +63,8 @@ public class OfferService(
             Message = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim()
         };
 
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
         var id = await offers.TryInsertAsync(offer, cancellationToken);
         if (id is null)
         {
@@ -92,6 +95,9 @@ public class OfferService(
                 $"{response.BuyerDisplayName} offered {response.Amount} EUR for \"{response.ArtworkTitle}\".",
                 "/offers");
         }
+
+        await db.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
 
         return ServiceResult<OfferResponse>.Success(response);
     }
@@ -131,8 +137,9 @@ public class OfferService(
                 $"This offer is already {offer.Status.ToString().ToLowerInvariant()}.");
         }
 
-        // The accepted offer, the other declined offers and the new order are saved in one SaveChanges call,
-        // so either all of them change or none do.
+        // Save the order, offer changes and notifications in one transaction.
+        await using var transaction = await db.Database.BeginTransactionAsync();
+
         offer.Status = OfferStatus.Accepted;
         offer.RespondedAtUtc = DateTime.UtcNow;
 
@@ -151,11 +158,6 @@ public class OfferService(
 
         offer.OrderId = orderResult.Value!.Id;
 
-        if (!await TrySaveAsync())
-        {
-            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
-        }
-
         // Offers submitted after otherOffers was loaded are declined now that the artwork is reserved.
         var lateBuyerIds = await offers.DeclineOpenOffersIfListingUnavailableAsync(offer.ArtworkListingId, offer.Id);
 
@@ -169,7 +171,12 @@ public class OfferService(
                 $"/orders/{offer.OrderId}");
         }
 
-        foreach (var declinedBuyerId in otherOffers.Select(other => other.BuyerId).Concat(lateBuyerIds))
+        var declinedBuyerIds = otherOffers
+            .Select(other => other.BuyerId)
+            .Concat(lateBuyerIds)
+            .Distinct();
+
+        foreach (var declinedBuyerId in declinedBuyerIds)
         {
             await notifications.NotifyAsync(
                 declinedBuyerId,
@@ -177,6 +184,13 @@ public class OfferService(
                 $"Your offer for \"{offer.ArtworkListing?.Title}\" was declined because the artwork was sold to another buyer.",
                 "/offers");
         }
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
+        }
+
+        await transaction.CommitAsync();
 
         return ServiceResult<OfferResponse>.Success(ToResponse(offer));
     }
@@ -214,11 +228,6 @@ public class OfferService(
         offer.Status = OfferStatus.Declined;
         offer.RespondedAtUtc = DateTime.UtcNow;
 
-        if (!await TrySaveAsync())
-        {
-            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
-        }
-
         var otherPartyId = userId == offer.BuyerId ? sellerId : offer.BuyerId;
         if (otherPartyId is int notifyUserId)
         {
@@ -227,6 +236,11 @@ public class OfferService(
                 NotificationType.OfferDeclined,
                 $"The offer for \"{offer.ArtworkListing?.Title}\" was declined.",
                 "/offers");
+        }
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
         }
 
         return ServiceResult<OfferResponse>.Success(ToResponse(offer));
@@ -276,16 +290,16 @@ public class OfferService(
         offer.CounterMessage = string.IsNullOrWhiteSpace(request.Message) ? null : request.Message.Trim();
         offer.RespondedAtUtc = DateTime.UtcNow;
 
-        if (!await TrySaveAsync())
-        {
-            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
-        }
-
         await notifications.NotifyAsync(
             offer.BuyerId,
             NotificationType.OfferCountered,
             $"The seller countered your offer for \"{listing.Title}\" with {request.Amount} EUR.",
             "/offers");
+
+        if (!await TrySaveAsync())
+        {
+            return ServiceResult<OfferResponse>.Conflict(OfferChangedMessage);
+        }
 
         return ServiceResult<OfferResponse>.Success(ToResponse(offer));
     }
@@ -343,6 +357,7 @@ public class OfferService(
             return false;
         }
     }
+
     private static OfferResponse ToResponse(Offer offer)
     {
         return new OfferResponse

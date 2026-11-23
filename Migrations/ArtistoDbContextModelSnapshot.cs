@@ -176,6 +176,44 @@ namespace ARTISTO.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ARTISTO.Models.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Link")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "ReadAtUtc");
+
+                    b.HasIndex("UserId", "CreatedAtUtc", "Id");
+
+                    b.ToTable("Notifications");
+                });
+
             modelBuilder.Entity("ARTISTO.Models.Offer", b =>
                 {
                     b.Property<int>("Id")
@@ -480,6 +518,17 @@ namespace ARTISTO.Migrations
                     b.Navigation("UserOne");
 
                     b.Navigation("UserTwo");
+                });
+
+            modelBuilder.Entity("ARTISTO.Models.Notification", b =>
+                {
+                    b.HasOne("ARTISTO.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ARTISTO.Models.Offer", b =>
