@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using ARTISTO.Data;
 using ARTISTO.Models;
+using ARTISTO.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
@@ -84,6 +86,74 @@ public sealed class ArtworkImageApiTests
         Assert.Equal(HttpStatusCode.Forbidden, (await other.DeleteAsync(imagePath)).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await visitor.DeleteAsync(imagePath)).StatusCode);
         await AssertImageAsync(visitor, url, "image/png", png);
+    }
+
+    [Theory]
+    [InlineData(ServiceStatus.NotFound)]
+    [InlineData(ServiceStatus.Forbidden)]
+    [InlineData(ServiceStatus.Success)]
+    public async Task Upload_allows_listing_changes_during_validation_and_rechecks_before_save(ServiceStatus expectedStatus)
+    {
+        using var app = new SocialApp();
+        await app.Seed();
+        using var owner = app.Client();
+        var ownerId = await app.Register(owner);
+        var listingId = await app.Artwork(owner);
+
+        using var uploadScope = app.Services.CreateScope();
+        var db = uploadScope.ServiceProvider.GetRequiredService<ArtistoDbContext>();
+        var imageService = new CallbackImageService(async () =>
+        {
+            Assert.Null(db.Database.CurrentTransaction);
+
+            using var changeScope = app.Services.CreateScope();
+            var changeDb = changeScope.ServiceProvider.GetRequiredService<ArtistoDbContext>();
+            var listing = await changeDb.ArtworkListings.SingleAsync(x => x.Id == listingId);
+
+            switch (expectedStatus)
+            {
+                case ServiceStatus.NotFound:
+                    changeDb.ArtworkListings.Remove(listing);
+                    break;
+                case ServiceStatus.Forbidden:
+                    listing.UserId = null;
+                    break;
+                case ServiceStatus.Success:
+                    listing.Status = ArtworkListingStatus.Reserved;
+                    break;
+            }
+
+            await changeDb.SaveChangesAsync();
+        });
+
+        var service = new ArtworkListingService(new ArtworkListingRepository(db), imageService, db);
+        using var content = new MemoryStream(CreateImage(jpeg: false));
+        var image = new FormFile(content, 0, content.Length, "image", "artwork.png");
+        var result = await service.UploadImageAsync(listingId, image, ownerId);
+
+        Assert.Equal(expectedStatus, result.Status);
+        using var verifyScope = app.Services.CreateScope();
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ArtistoDbContext>();
+        var stored = await verifyDb.ArtworkImages.SingleOrDefaultAsync(x => x.ArtworkListingId == listingId);
+        if (expectedStatus == ServiceStatus.Success)
+        {
+            Assert.Equal(ArtworkListingStatus.Reserved, result.Value!.Status);
+            Assert.NotNull(stored);
+            Assert.Equal(content.ToArray(), stored.Content);
+        }
+        else
+        {
+            Assert.Null(stored);
+        }
+    }
+
+    private sealed class CallbackImageService(Func<Task> onRead) : IArtworkImageService
+    {
+        public async Task<ArtworkImage> ReadAsync(int listingId, IFormFile image, CancellationToken cancellationToken = default)
+        {
+            await onRead();
+            return await new ArtworkImageService().ReadAsync(listingId, image, cancellationToken);
+        }
     }
 
     private static async Task<string> UploadAsync(HttpClient client, string path, byte[] content)

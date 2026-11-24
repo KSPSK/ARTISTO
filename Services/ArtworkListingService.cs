@@ -137,9 +137,6 @@ public class ArtworkListingService : IArtworkListingService
         IFormFile? image,
         int userId)
     {
-        await using var transaction = await _db.Database.BeginTransactionAsync();
-        await _db.LockListingAsync(id);
-
         var existing = await _repository.GetByIdAsync(id);
         if (existing is null)
         {
@@ -164,6 +161,22 @@ public class ArtworkListingService : IArtworkListingService
         catch (ArtworkImageValidationException exception)
         {
             return ServiceResult<ArtworkListing>.BadRequest(exception.Message);
+        }
+
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        await _db.LockListingAsync(id);
+
+        // The tracked listing may have changed while the image was being validated.
+        var entry = _db.Entry(existing);
+        await entry.ReloadAsync();
+        if (entry.State == EntityState.Detached)
+        {
+            return ServiceResult<ArtworkListing>.NotFound($"Artwork listing {id} was not found.");
+        }
+
+        if (existing.UserId is null || existing.UserId != userId)
+        {
+            return ServiceResult<ArtworkListing>.Forbidden();
         }
 
         await _repository.SetImageAsync(artworkImage);
