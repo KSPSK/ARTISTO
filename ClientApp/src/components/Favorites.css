@@ -1,28 +1,78 @@
+body:has(.favorites-page) {
+  background: #f4f4f4;
+}
+
+body:has(.favorites-page) header > .navbar {
+  background: #fff;
+  box-shadow: none;
+}
+
+body:has(.favorites-page) header > .navbar > .container {
+  max-width: 1100px;
+}
+
 .favorites-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
+  width: min(100%, 1100px);
+  margin-inline: auto;
+  padding-block: clamp(1.25rem, 4vw, 3rem) 4rem;
+  color: #111;
 }
 
 .favorites-page h1 {
-  margin-bottom: 2rem;
+  margin: 0 0 2rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
 }
 
 .favorites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 290px));
+  align-items: start;
   gap: 1.5rem;
 }
 
 .favorite-card {
-  border: 1px solid #dddddd;
   padding: 1rem;
-  background: #ffffff;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 8%);
+  overflow-wrap: anywhere;
+}
+
+.favorite-card .artwork-thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.favorite-card .artwork-thumb-empty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed #d4d4d4;
+  background: #efefef;
+  color: #111;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .favorite-card h2 {
-  margin-top: 1rem;
-  font-size: 1.25rem;
+  margin: 0.9rem 0 0.35rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.favorite-card p {
+  margin: 0 0 0.75rem;
+  color: #595959;
+  font-size: 0.9rem;
 }
 
 .favorite-card .artwork-price {
@@ -44,12 +94,12 @@
 }
 
 .favorites-empty {
-  text-align: center;
-  padding: 3rem 1rem;
+  padding-block: 2rem;
 }
 
 .favorites-pagination {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 1rem;
