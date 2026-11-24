@@ -42,6 +42,29 @@ public class ArtworkListingRepository : IArtworkListingRepository
         return await _context.ArtworkListings.FindAsync(id);
     }
 
+    public Task<ArtworkImage?> GetImageAsync(int id)
+    {
+        return _context.ArtworkImages.AsNoTracking().SingleOrDefaultAsync(image => image.ArtworkListingId == id);
+    }
+
+    public async Task SetImageAsync(ArtworkImage image)
+    {
+        var updated = await _context.ArtworkImages.Where(existing => existing.ArtworkListingId == image.ArtworkListingId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(existing => existing.Content, image.Content)
+                .SetProperty(existing => existing.ContentType, image.ContentType));
+
+        if (updated == 0)
+        {
+            _context.ArtworkImages.Add(image);
+        }
+    }
+
+    public Task RemoveImageAsync(int id)
+    {
+        return _context.ArtworkImages.Where(image => image.ArtworkListingId == id).ExecuteDeleteAsync();
+    }
+
     public async Task<bool> HasOrdersAsync(int id)
     {
         return await _context.Orders.AnyAsync(o => o.ArtworkListingId == id);

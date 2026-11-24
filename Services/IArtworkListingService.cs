@@ -11,6 +11,7 @@ public interface IArtworkListingService
         decimal? maxPrice = null);
 
     Task<ArtworkListing?> GetByIdAsync(int id);
+    Task<ArtworkImage?> GetImageAsync(int id);
 
     Task<ServiceResult<ArtworkListing>> CreateAsync(ArtworkListingWriteRequest request, int userId);
 

@@ -1,12 +1,12 @@
+using ARTISTO.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace ARTISTO.Services;
 
 public interface IArtworkImageService
 {
-    Task<string> SaveAsync(
+    Task<ArtworkImage> ReadAsync(
+        int listingId,
         IFormFile image,
         CancellationToken cancellationToken = default);
-
-    void Delete(string? imageUrl);
 }

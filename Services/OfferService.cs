@@ -64,7 +64,7 @@ public class OfferService(
         };
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        await db.LockListingForPurchaseAsync(request.ArtworkListingId, cancellationToken);
+        await db.LockListingAsync(request.ArtworkListingId, cancellationToken);
 
         var id = await offers.TryInsertAsync(offer, cancellationToken);
         if (id is null)
@@ -140,7 +140,7 @@ public class OfferService(
 
         // Save the order, offer changes and notifications in one transaction.
         await using var transaction = await db.Database.BeginTransactionAsync();
-        await db.LockListingForPurchaseAsync(offer.ArtworkListingId);
+        await db.LockListingAsync(offer.ArtworkListingId);
 
         offer.Status = OfferStatus.Accepted;
         offer.RespondedAtUtc = DateTime.UtcNow;

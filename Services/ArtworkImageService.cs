@@ -1,3 +1,4 @@
+using ARTISTO.Models;
 using Microsoft.AspNetCore.Http;
 
 namespace ARTISTO.Services;
@@ -6,20 +7,8 @@ public sealed class ArtworkImageService : IArtworkImageService
 {
     public const long MaximumFileSizeBytes = 5 * 1024 * 1024;
 
-    private const string PublicUrlPrefix = "/uploads/artworks/";
-    private readonly string _uploadDirectory;
-
-    public ArtworkImageService(IWebHostEnvironment environment)
-    {
-        var webRoot = string.IsNullOrWhiteSpace(environment.WebRootPath)
-            ? Path.Combine(environment.ContentRootPath, "wwwroot")
-            : environment.WebRootPath;
-
-        _uploadDirectory = Path.Combine(webRoot, "uploads", "artworks");
-        Directory.CreateDirectory(_uploadDirectory);
-    }
-
-    public async Task<string> SaveAsync(
+    public async Task<ArtworkImage> ReadAsync(
+        int listingId,
         IFormFile image,
         CancellationToken cancellationToken = default)
     {
@@ -35,33 +24,13 @@ public sealed class ArtworkImageService : IArtworkImageService
             throw FileTooLarge();
         }
 
-        var imageData = await ReadImageAsync(image, cancellationToken);
-        var extension = ArtworkImageFormatValidator.GetExtension(imageData);
-        var fileName = $"{Guid.NewGuid():N}{extension}";
-        var destination = Path.Combine(_uploadDirectory, fileName);
-        var temporary = Path.Combine(_uploadDirectory, $".{Guid.NewGuid():N}.tmp");
-
-        try
+        var content = await ReadImageAsync(image, cancellationToken);
+        return new ArtworkImage
         {
-            await File.WriteAllBytesAsync(temporary, imageData, cancellationToken);
-            File.Move(temporary, destination);
-        }
-        finally
-        {
-            File.Delete(temporary);
-        }
-
-        return $"{PublicUrlPrefix}{fileName}";
-    }
-
-    public void Delete(string? imageUrl)
-    {
-        if (string.IsNullOrWhiteSpace(imageUrl))
-        {
-            return;
-        }
-
-        File.Delete(GetManagedImagePath(imageUrl));
+            ArtworkListingId = listingId,
+            Content = content,
+            ContentType = ArtworkImageFormatValidator.GetContentType(content)
+        };
     }
 
     private static async Task<byte[]> ReadImageAsync(
@@ -94,27 +63,6 @@ public sealed class ArtworkImageService : IArtworkImageService
         }
 
         return destination.ToArray();
-    }
-
-    private string GetManagedImagePath(string imageUrl)
-    {
-        if (!imageUrl.StartsWith(PublicUrlPrefix, StringComparison.Ordinal))
-        {
-            throw new ArgumentException("The image URL is not managed by this service.", nameof(imageUrl));
-        }
-
-        var fileName = imageUrl[PublicUrlPrefix.Length..];
-        var extension = Path.GetExtension(fileName);
-        var name = Path.GetFileNameWithoutExtension(fileName);
-
-        if (fileName != Path.GetFileName(fileName)
-            || !Guid.TryParseExact(name, "N", out _)
-            || extension is not (".jpg" or ".png" or ".webp"))
-        {
-            throw new ArgumentException("The image URL is not managed by this service.", nameof(imageUrl));
-        }
-
-        return Path.Combine(_uploadDirectory, fileName);
     }
 
     private static ArtworkImageValidationException FileTooLarge() =>

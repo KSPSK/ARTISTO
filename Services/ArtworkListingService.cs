@@ -9,11 +9,13 @@ public class ArtworkListingService : IArtworkListingService
 {
     private readonly IArtworkListingRepository _repository;
     private readonly IArtworkImageService _images;
+    private readonly ArtistoDbContext _db;
 
-    public ArtworkListingService(IArtworkListingRepository repository, IArtworkImageService images)
+    public ArtworkListingService(IArtworkListingRepository repository, IArtworkImageService images, ArtistoDbContext db)
     {
         _repository = repository;
         _images = images;
+        _db = db;
     }
 
     public async Task<IEnumerable<ArtworkListing>> GetAllAsync(
@@ -27,6 +29,11 @@ public class ArtworkListingService : IArtworkListingService
     public async Task<ArtworkListing?> GetByIdAsync(int id)
     {
         return await _repository.GetByIdAsync(id);
+    }
+
+    public Task<ArtworkImage?> GetImageAsync(int id)
+    {
+        return _repository.GetImageAsync(id);
     }
 
     public async Task<ServiceResult<ArtworkListing>> CreateAsync(
@@ -119,10 +126,8 @@ public class ArtworkListingService : IArtworkListingService
             return ServiceResult.BadRequest("Cannot delete an artwork listing that has existing orders.");
         }
 
-        var imageUrl = existing.ImageUrl;
         _repository.Remove(existing);
         await _repository.SaveChangesAsync();
-        _images.Delete(imageUrl);
 
         return ServiceResult.Success();
     }
@@ -148,37 +153,45 @@ public class ArtworkListingService : IArtworkListingService
             return ServiceResult<ArtworkListing>.BadRequest("An image file is required.");
         }
 
-        string imageUrl;
+        ArtworkImage artworkImage;
         try
         {
-            imageUrl = await _images.SaveAsync(image);
+            artworkImage = await _images.ReadAsync(id, image);
         }
         catch (ArtworkImageValidationException exception)
         {
             return ServiceResult<ArtworkListing>.BadRequest(exception.Message);
         }
 
-        var previousImageUrl = existing.ImageUrl;
-        existing.ImageUrl = imageUrl;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        await _db.LockListingAsync(id);
 
-        try
+        // The tracked listing may have changed while the image was being validated.
+        var entry = _db.Entry(existing);
+        await entry.ReloadAsync();
+        if (entry.State == EntityState.Detached)
         {
-            await _repository.SaveChangesAsync();
-        }
-        catch
-        {
-            existing.ImageUrl = previousImageUrl;
-            _images.Delete(imageUrl);
-            throw;
+            return ServiceResult<ArtworkListing>.NotFound($"Artwork listing {id} was not found.");
         }
 
-        _images.Delete(previousImageUrl);
+        if (existing.UserId is null || existing.UserId != userId)
+        {
+            return ServiceResult<ArtworkListing>.Forbidden();
+        }
+
+        await _repository.SetImageAsync(artworkImage);
+        existing.ImageUrl = $"/api/artworklistings/{id}/image?v={Guid.NewGuid():N}";
+        await _repository.SaveChangesAsync();
+        await transaction.CommitAsync();
 
         return ServiceResult<ArtworkListing>.Success(existing);
     }
 
     public async Task<ServiceResult> DeleteImageAsync(int id, int userId)
     {
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        await _db.LockListingAsync(id);
+
         var existing = await _repository.GetByIdAsync(id);
         if (existing is null)
         {
@@ -190,10 +203,10 @@ public class ArtworkListingService : IArtworkListingService
             return ServiceResult.Forbidden();
         }
 
-        var imageUrl = existing.ImageUrl;
+        await _repository.RemoveImageAsync(id);
         existing.ImageUrl = null;
         await _repository.SaveChangesAsync();
-        _images.Delete(imageUrl);
+        await transaction.CommitAsync();
 
         return ServiceResult.Success();
     }

@@ -11,6 +11,7 @@ public class ArtistoDbContext : DbContext
     }
 
     public DbSet<ArtworkListing> ArtworkListings => Set<ArtworkListing>();
+    public DbSet<ArtworkImage> ArtworkImages => Set<ArtworkImage>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Offer> Offers => Set<Offer>();
@@ -21,10 +22,9 @@ public class ArtistoDbContext : DbContext
     public DbSet<Conversation> Conversations => Set<Conversation>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
-    // PostgreSQL permits concurrent writers. Serialize offer creation and reservation
-    // on the listing row before either operation reads or writes its open offers.
+    // Serialize operations that coordinate changes across a listing and its related rows.
     // SQLite already serializes writers when the surrounding transaction begins.
-    public async Task LockListingForPurchaseAsync(int listingId, CancellationToken cancellationToken = default)
+    public async Task LockListingAsync(int listingId, CancellationToken cancellationToken = default)
     {
         if (Database.IsNpgsql())
         {
@@ -37,6 +37,15 @@ public class ArtistoDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ArtworkImage>(entity =>
+        {
+            entity.HasKey(x => x.ArtworkListingId);
+            entity.Property(x => x.ContentType).HasMaxLength(32);
+            entity.HasOne<ArtworkListing>().WithOne()
+                .HasForeignKey<ArtworkImage>(x => x.ArtworkListingId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Conversation>(entity =>
         {
             entity.ToTable("Conversations", t => t.HasCheckConstraint("CK_Conversations_ParticipantsOrder", "\"UserOneId\" < \"UserTwoId\""));

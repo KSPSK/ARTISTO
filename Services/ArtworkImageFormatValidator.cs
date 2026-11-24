@@ -9,20 +9,20 @@ internal static class ArtworkImageFormatValidator
 {
     private const long MaximumPixelCount = 20_000_000;
 
-    public static string GetExtension(byte[] data)
+    public static string GetContentType(byte[] data)
     {
         try
         {
             var format = Image.DetectFormat(data);
-            var extension = format switch
+            var contentType = format switch
             {
-                JpegFormat => ".jpg",
-                PngFormat => ".png",
-                WebpFormat => ".webp",
+                JpegFormat => "image/jpeg",
+                PngFormat => "image/png",
+                WebpFormat => "image/webp",
                 _ => null
             };
 
-            if (extension is null)
+            if (contentType is null)
             {
                 throw InvalidImage();
             }
@@ -35,7 +35,7 @@ internal static class ArtworkImageFormatValidator
             }
 
             using var image = Image.Load(data);
-            return extension;
+            return contentType;
         }
         catch (ImageFormatException exception)
         {
