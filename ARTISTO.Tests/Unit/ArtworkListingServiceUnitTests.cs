@@ -12,7 +12,7 @@ public class ArtworkListingServiceUnitTests
     public async Task CreateListing_WhenUserDoesNotExist_ReturnsUnauthorized()
     {
         var repository = new FakeArtworkListingRepository { UserExists = false };
-        var service = new ArtworkListingService(repository, new FakeArtworkImageService());
+        var service = new ArtworkListingService(repository, new FakeArtworkImageService(), null!);
         var request = new ArtworkListingWriteRequest
         {
             Title = "Sunset",
@@ -41,7 +41,7 @@ public class ArtworkListingServiceUnitTests
                 Status = ArtworkListingStatus.Available
             }
         };
-        var service = new ArtworkListingService(repository, new FakeArtworkImageService());
+        var service = new ArtworkListingService(repository, new FakeArtworkImageService(), null!);
         var request = new ArtworkListingWriteRequest
         {
             Title = "Updated Title",
@@ -69,7 +69,7 @@ public class ArtworkListingServiceUnitTests
                 Status = ArtworkListingStatus.Reserved
             }
         };
-        var service = new ArtworkListingService(repository, new FakeArtworkImageService());
+        var service = new ArtworkListingService(repository, new FakeArtworkImageService(), null!);
         var request = new ArtworkListingWriteRequest
         {
             Title = "Reserved Painting",
@@ -93,18 +93,17 @@ public class ArtworkListingServiceUnitTests
                 Id = 7,
                 UserId = 10,
                 Title = "Ordered Artwork",
-                ImageUrl = "/uploads/artworks/sample.jpg"
+                ImageUrl = "/api/artworklistings/7/image"
             },
             ListingHasOrders = true
         };
-        var images = new FakeArtworkImageService();
-        var service = new ArtworkListingService(repository, images);
+        var service = new ArtworkListingService(repository, new FakeArtworkImageService(), null!);
 
         var result = await service.DeleteAsync(id: 7, userId: 10);
 
         Assert.Equal(ServiceStatus.BadRequest, result.Status);
+        Assert.False(repository.RemovedListing);
         Assert.False(repository.SavedChanges);
-        Assert.Null(images.DeletedImageUrl);
     }
 
     [Fact]
@@ -118,7 +117,7 @@ public class ArtworkListingServiceUnitTests
         {
             ExceptionToThrow = new ArtworkImageValidationException("The image must be 5 MB or smaller.")
         };
-        var service = new ArtworkListingService(repository, images);
+        var service = new ArtworkListingService(repository, images, null!);
         var file = new FormFile(Stream.Null, 0, 0, "image", "oversized.jpg");
 
         var result = await service.UploadImageAsync(id: 3, file, userId: 10);
@@ -133,19 +132,26 @@ public class ArtworkListingServiceUnitTests
         public ArtworkListing? ExistingListing { get; init; }
         public bool ListingHasOrders { get; init; }
         public bool UserExists { get; init; } = true;
+        public bool RemovedListing { get; private set; }
         public bool SavedChanges { get; private set; }
 
-        public Task<List<ArtworkListing>> GetAllAsync(string? search = null) =>
-            Task.FromResult(new List<ArtworkListing>());
-
         public Task<List<ArtworkListing>> GetAllAsync(
-            string? search,
-            ArtworkCategory? category,
-            decimal? maxPrice) =>
+            string? search = null,
+            ArtworkCategory? category = null,
+            decimal? maxPrice = null) =>
             Task.FromResult(new List<ArtworkListing>());
 
         public Task<ArtworkListing?> GetByIdAsync(int id) =>
             Task.FromResult(ExistingListing?.Id == id ? ExistingListing : null);
+
+        public Task<ArtworkImage?> GetImageAsync(int id) =>
+            Task.FromResult<ArtworkImage?>(null);
+
+        public Task SetImageAsync(ArtworkImage image) =>
+            Task.CompletedTask;
+
+        public Task RemoveImageAsync(int id) =>
+            Task.CompletedTask;
 
         public Task<bool> HasOrdersAsync(int id) =>
             Task.FromResult(ListingHasOrders);
@@ -158,6 +164,7 @@ public class ArtworkListingServiceUnitTests
 
         public void Remove(ArtworkListing listing)
         {
+            RemovedListing = true;
         }
 
         public Task SaveChangesAsync()
@@ -170,21 +177,23 @@ public class ArtworkListingServiceUnitTests
     private sealed class FakeArtworkImageService : IArtworkImageService
     {
         public Exception? ExceptionToThrow { get; init; }
-        public string? DeletedImageUrl { get; private set; }
 
-        public Task<string> SaveAsync(IFormFile image, CancellationToken cancellationToken = default)
+        public Task<ArtworkImage> ReadAsync(
+            int listingId,
+            IFormFile image,
+            CancellationToken cancellationToken = default)
         {
             if (ExceptionToThrow is not null)
             {
                 throw ExceptionToThrow;
             }
 
-            return Task.FromResult("/uploads/artworks/test.jpg");
-        }
-
-        public void Delete(string? imageUrl)
-        {
-            DeletedImageUrl = imageUrl;
+            return Task.FromResult(new ArtworkImage
+            {
+                ArtworkListingId = listingId,
+                ContentType = "image/jpeg",
+                Content = [1, 2, 3]
+            });
         }
     }
 }
