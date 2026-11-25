@@ -2,31 +2,31 @@
 
 ## Alpha — Core MVP
 
-- [ ] User accounts with buyer and creator capabilities
-- [ ] Basic creator profiles
-- [ ] Create, edit, and manage product listings
-- [ ] Artwork image upload
-- [ ] Marketplace / Discover page
-- [ ] Basic search
-- [ ] Product pages
-- [ ] Local-pickup order flow:
-  - [ ] Buyer places an order
-  - [ ] Seller confirms handover
-  - [ ] Buyer confirms receipt
-  - [ ] Order is marked completed
+- [x] User accounts with buyer and creator capabilities
+- [x] Basic creator profiles
+- [x] Create, edit, and manage product listings
+- [x] Artwork image upload
+- [x] Marketplace / Discover page
+- [x] Basic search
+- [x] Product pages
+- [x] Local-pickup order flow:
+  - [x] Buyer places an order
+  - [x] Seller confirms handover
+  - [x] Buyer confirms receipt
+  - [x] Order is marked completed
 
 ## Beta — Expanded Marketplace
 
 Everything from Alpha, plus:
 
-- [ ] Registration and login
-- [ ] Search filters and categories
-- [ ] Likes, favorites, and following creators
-- [ ] Buyer/seller chat
-- [ ] Notifications
-- [ ] Reviews and ratings after completed orders
-- [ ] Make an Offer, including accept, decline, and counter-offer
-- [ ] Basic reputation statistics
+- [x] Registration and login
+- [x] Search filters and categories
+- [x] Likes, favorites, and following creators
+- [x] Buyer/seller chat
+- [x] Notifications
+- [x] Reviews and ratings after completed orders
+- [x] Make an Offer, including accept, decline, and counter-offer
+- [x] Basic reputation statistics
 
 ## Final Product — Platform Maturity
 
